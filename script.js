@@ -295,6 +295,12 @@ function updateButtonVisibility() {
     }
 }
 
+gamePhase === 'dealer'. It should actually reveal them as soon as the dealer phase starts.
+
+Here is the fix. Replace your existing updateDisplay function with this corrected version:
+
+JavaScript
+
 function updateDisplay() {
     document.getElementById('bankroll').innerText = bankroll.toLocaleString();
     document.getElementById('decks-left').innerText = (deck.length / 52).toFixed(1);
@@ -302,11 +308,16 @@ function updateDisplay() {
     updatePlayAccuracy();
     updateBetSuggestion();
 
-    let dealerStr = (gamePhase === 'playing' || gamePhase === 'insurance' || gamePhase === 'dealer')
+    // FIXED HERE: Removed 'dealer' from the condition so cards are REVEALED during dealer phase
+    let hideDealer = (gamePhase === 'playing' || gamePhase === 'insurance');
+    
+    let dealerStr = hideDealer
         ? cardText(dealerHand[0]) + ' ??'
         : dealerHand.map(cardText).join(' ');
+
     document.getElementById('dealer-cards').innerText = dealerStr;
-    document.getElementById('dealer-total').innerText = (gamePhase === 'playing' || gamePhase === 'insurance' || gamePhase === 'dealer')
+    
+    document.getElementById('dealer-total').innerText = hideDealer
         ? '?'
         : calculateTotal(dealerHand);
 
