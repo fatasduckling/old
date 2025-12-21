@@ -77,7 +77,7 @@ function applySettings() {
 
     createDeck();
     closeSettings();
-    updateDisplay();
+    updateDisplay();  // Ensures Deal button visibility updates immediately
 }
 
 function createDeck() {
@@ -148,13 +148,13 @@ function getDealerUpVal() {
     return rank === 'A' ? 'A' : getValue(dealerHand[0]);
 }
 
-// Fixed accurate basic strategy + deviations
+// Accurate basic strategy + Illustrious 18 deviations
 function getCorrectAction(hand) {
     const total = calculateTotal(hand);
     const tc = getCurrentTrueCount();
     const up = getDealerUpVal();
 
-    // Surrender deviations
+    // Surrender
     if (lateSurrenderAllowed && hand.length === 2) {
         if (total in fab4 && up in fab4[total] && tc <= fab4[total][up]) return 'surrender';
     }
@@ -174,11 +174,11 @@ function getCorrectAction(hand) {
         if (total in illustrious18 && up in illustrious18[total] && tc >= illustrious18[total][up]) return 'double';
     }
 
-    // Accurate basic strategy (multi-deck, H17, DAS)
+    // Basic strategy
     if (isPair(hand)) {
         const r = getValue(hand[0]);
         if (r === 11) return 'split';
-        if (r === 10) return 'stand';
+        if (r === 10) return 'stand';  // Correct: always stand on 20
         if (r === 9) return up <= 9 ? 'split' : 'stand';
         if (r === 8) return 'split';
         if (r === 7) return up <= 7 ? 'split' : 'hit';
@@ -201,7 +201,9 @@ function getCorrectAction(hand) {
     if (total >= 17) return 'stand';
     if (total <= 11) return 'double';
     if (total === 12) return up >= 4 && up <= 6 ? 'stand' : 'hit';
-    return 'hit'; // 13-16 vs 7-A
+    if (total <= 16) return up <= 6 ? 'stand' : 'hit';
+
+    return 'hit';
 }
 
 function getCurrentTrueCount() {
@@ -271,7 +273,7 @@ function updateDisplay() {
     document.getElementById('player-cards').innerText = hand.map(cardText).join(' ');
     document.getElementById('player-total').innerText = calculateTotal(hand);
 
-    // Fixed Deal button visibility
+    // Correct Deal button visibility
     const dealBtn = document.getElementById('deal-button');
     if (gamePhase === 'betting') {
         dealBtn.style.display = 'inline-block';
