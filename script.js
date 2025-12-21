@@ -1,9 +1,9 @@
-// script.js - Final Version with Working Settings, Auto-Continue, Play Accuracy
+// script.js - True Count Fixed: Counts ALL cards in the shoe
 
 let deck = [];
 let playerHands = [];
 let dealerHand = [];
-let seenCards = [];
+let seenCards = [];  // Persistent across hands! Only resets on full reshuffle
 let bankroll = 5000;
 let baseUnit = 25;
 let currentBet = 25;
@@ -16,7 +16,7 @@ let dasAllowed = true;
 let dealerHitsSoft17 = true;
 let lateSurrenderAllowed = true;
 
-// Play accuracy tracking
+// Play accuracy
 let totalDecisions = 0;
 let correctDecisions = 0;
 
@@ -57,12 +57,17 @@ function closeSettings() {
 }
 
 function applySettings() {
+    const oldNumDecks = numDecks;
     numDecks = parseInt(document.getElementById('num-decks').value);
     dasAllowed = document.getElementById('das').value === 'true';
     dealerHitsSoft17 = document.getElementById('soft17').value === 'true';
     lateSurrenderAllowed = document.getElementById('surrender').value === 'true';
 
-    createDeck(); // Rebuild shoe with new rules
+    if (numDecks !== oldNumDecks) {
+        seenCards = [];  // Only reset seen cards if deck count changes
+    }
+
+    createDeck();
     closeSettings();
     updateDisplay();
 }
@@ -87,10 +92,13 @@ function shuffle(array) {
 }
 
 function dealCard(toHand) {
-    if (deck.length < 20) createDeck();
+    if (deck.length < 20) {
+        createDeck();
+        // Do NOT reset seenCards on normal reshuffle — only on deck count change
+    }
     const card = deck.pop();
     toHand.push(card);
-    seenCards.push(card);
+    seenCards.push(card);  // Accumulates forever until deck count change
     updateTrueCount();
     return card;
 }
@@ -171,9 +179,9 @@ function getCorrectAction(hand) {
 }
 
 function getCurrentTrueCount() {
-    const rc = seenCards.reduce((s, c) => s + getHiLoTag(c), 0);
+    const runningCount = seenCards.reduce((s, c) => s + getHiLoTag(c), 0);
     const decksLeft = Math.max(0.5, deck.length / 52);
-    return Math.round(rc / decksLeft * 10) / 10;
+    return Math.round(runningCount / decksLeft * 10) / 10;
 }
 
 function updateTrueCount() {
@@ -211,7 +219,6 @@ function startHand() {
     }
     bankroll -= currentBet;
 
-    seenCards = [];
     playerHands = [[]];
     dealerHand = [];
     currentHandIndex = 0;
@@ -228,127 +235,4 @@ function startHand() {
 }
 
 function playerMove(action) {
-    const hand = playerHands[currentHandIndex];
-
-    if (hand.length === 2 && !moveJustMade) {
-        totalDecisions++;
-        const correct = getCorrectAction(hand);
-        if (action === correct) {
-            correctDecisions++;
-            document.getElementById('feedback').innerText = "✓ Correct play!";
-        } else {
-            document.getElementById('feedback').innerText = `✗ Wrong — correct was ${correct.toUpperCase()}`;
-        }
-        moveJustMade = true;
-    }
-
-    if (action === 'hit') {
-        dealCard(hand);
-        if (calculateTotal(hand) > 21) nextHand();
-    } else if (action === 'stand') {
-        nextHand();
-    } else if (action === 'double') {
-        if (hand.length === 2) {
-            bankroll -= currentBet;
-            currentBet *= 2;
-            dealCard(hand);
-            nextHand();
-        }
-    } else if (action === 'split') {
-        if (isPair(hand) && playerHands.length < 4) {
-            bankroll -= currentBet;
-            const card = hand.pop();
-            playerHands.push([card]);
-            dealCard(hand);
-            dealCard(playerHands[playerHands.length - 1]);
-            moveJustMade = false;
-        }
-    } else if (action === 'surrender') {
-        if (hand.length === 2 && lateSurrenderAllowed) {
-            bankroll += currentBet / 2;
-            document.getElementById('result').innerText = "Surrendered — lost half";
-            nextHand();
-        }
-    }
-
-    updateDisplay();
-}
-
-function nextHand() {
-    if (currentHandIndex < playerHands.length - 1) {
-        currentHandIndex++;
-        moveJustMade = false;
-        document.getElementById('feedback').innerText = "Make your move...";
-    } else {
-        dealerPlay();
-    }
-    updateDisplay();
-}
-
-function dealerPlay() {
-    gamePhase = 'dealer';
-    updateDisplay();
-
-    while (calculateTotal(dealerHand) < 17 ||
-           (calculateTotal(dealerHand) === 17 && dealerHitsSoft17 && dealerHand.some(c => c.startsWith('A')))) {
-        dealCard(dealerHand);
-    }
-
-    evaluateResults();
-}
-
-function evaluateResults() {
-    gamePhase = 'roundEnd';
-    let result = '';
-    let net = 0;
-
-    playerHands.forEach(hand => {
-        const pTotal = calculateTotal(hand);
-        const dTotal = calculateTotal(dealerHand);
-
-        if (pTotal > 21) {
-            result += 'Bust — Lose<br>';
-        } else if (dTotal > 21 || pTotal > dTotal) {
-            if (pTotal === 21 && hand.length === 2) {
-                net += currentBet * 1.5;
-                result += 'BLACKJACK! +1.5x<br>';
-            } else {
-                net += currentBet;
-                result += 'Win<br>';
-            }
-        } else if (pTotal === dTotal) {
-            net += currentBet;
-            result += 'Push<br>';
-        } else {
-            result += 'Lose<br>';
-        }
-    });
-
-    bankroll += net;
-    document.getElementById('result').innerHTML = result + `<br>Net: ${net >= 0 ? '+' : ''}$${net}`;
-    updateDisplay();
-}
-
-function checkCount() {
-    const actualRC = seenCards.reduce((s, c) => s + getHiLoTag(c), 0);
-    const guess = parseInt(document.getElementById('count-guess').value) || 0;
-
-    if (guess === actualRC) {
-        document.getElementById('count-feedback').innerHTML = `<strong style="color:lime">✓ CORRECT!</strong> Running count was ${actualRC}`;
-    } else {
-        document.getElementById('count-feedback').innerHTML = `<strong style="color:red">✗ WRONG</strong> — Running count was ${actualRC} (you guessed ${guess})`;
-    }
-
-    // Automatically continue to next hand after showing feedback
-    setTimeout(() => {
-        gamePhase = 'betting';
-        document.getElementById('feedback').innerText = "Ready — press Deal to start";
-        document.getElementById('count-feedback').innerHTML = '';
-        document.getElementById('result').innerHTML = '';
-        updateDisplay();
-    }, 3000); // 3 second delay so player can read feedback
-}
-
-// Init
-createDeck();
-updateDisplay();
+    const
