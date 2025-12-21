@@ -119,9 +119,9 @@
 </head>
 <body>
 
-<button id="settings-btn" onclick="openSettings()">⚙️ Settings</button>
+<button id="settings-btn">⚙️ Settings</button>
 
-<div id="overlay" onclick="closeSettings()"></div>
+<div id="overlay"></div>
 
 <div id="settings-menu">
     <h2>Game Settings</h2>
@@ -167,7 +167,7 @@
             <option value="false" selected>No</option>
         </select>
     </p>
-    <button onclick="applySettings()">Apply & Close</button>
+    <button id="apply-settings-btn">Apply & Close</button>
 </div>
 
 <div id="game">
@@ -184,7 +184,7 @@
         <p id="bet-suggestion">Suggested bet: $25 (1 unit)</p>
         <p>
             Place your bet: $<input type="number" id="bet-input" min="25" step="25" value="25">
-            <button id="deal-button" onclick="startHand()">Deal New Hand</button>
+            <button id="deal-button">Deal New Hand</button>
         </p>
     </div>
 
@@ -200,16 +200,16 @@
 
     <div id="insurance-actions" class="section" style="display:none;">
         <p style="font-size:24px; color:orange;">Dealer shows Ace — Insurance offered?</p>
-        <button id="insurance-btn" onclick="takeInsurance()">Yes — Take Insurance</button>
-        <button id="no-insurance-btn" onclick="declineInsurance()">No — Decline</button>
+        <button id="insurance-btn">Yes — Take Insurance</button>
+        <button id="no-insurance-btn">No — Decline</button>
     </div>
 
     <div id="actions" class="section" style="display:none;">
-        <button id="hit-btn" onclick="playerMove('hit')">Hit</button>
-        <button id="stand-btn" onclick="playerMove('stand')">Stand</button>
-        <button id="double-btn" onclick="playerMove('double')">Double</button>
-        <button id="split-btn" onclick="playerMove('split')">Split</button>
-        <button id="surrender-btn" onclick="playerMove('surrender')">Surrender</button>
+        <button id="hit-btn">Hit</button>
+        <button id="stand-btn">Stand</button>
+        <button id="double-btn">Double</button>
+        <button id="split-btn">Split</button>
+        <button id="surrender-btn">Surrender</button>
     </div>
 
     <div class="section">
@@ -221,7 +221,7 @@
         <p>Previous running count was: <strong id="previous-rc">0</strong></p>
         <p>Count accuracy: <span id="count-accuracy">0/0 (0%)</span></p>
         <p>Your running count guess: <input type="number" id="count-guess" placeholder="e.g. +5"></p>
-        <button onclick="checkCount()">Submit Guess & Continue</button>
+        <button id="check-count-btn">Submit Guess & Continue</button>
         <p id="count-feedback"></p>
     </div>
 
