@@ -477,14 +477,28 @@ function nextHand() {
 
 function dealerPlay() {
     gamePhase = 'dealer';
-    updateDisplay();
+    updateDisplay(); // Immediately reveals the hole card
 
-    while (calculateTotal(dealerHand) < 17 ||
-           (calculateTotal(dealerHand) === 17 && dealerHitsSoft17 && dealerHand.some(c => c.startsWith('A')))) {
+    // Wait 800ms before the dealer starts hitting (so you can see the hole card first)
+    setTimeout(dealerHitStep, 800);
+}
+
+function dealerHitStep() {
+    const total = calculateTotal(dealerHand);
+    const soft = isSoft(dealerHand);
+
+    // Dealer hits if total < 17 OR (Soft 17 and rule is enabled)
+    // Note: We use the existing isSoft() function to ensure we don't hit a Hard 17 containing an Ace
+    if (total < 17 || (total === 17 && dealerHitsSoft17 && soft)) {
         dealCard(dealerHand);
+        updateDisplay();
+        
+        // Wait 800ms before checking/hitting again
+        setTimeout(dealerHitStep, 800);
+    } else {
+        // Dealer is done
+        evaluateResults();
     }
-
-    evaluateResults();
 }
 
 function evaluateResults() {
