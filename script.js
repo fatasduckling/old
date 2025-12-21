@@ -308,13 +308,14 @@ function updateDisplay() {
     updatePlayAccuracy();
     updateBetSuggestion();
 
-    // FIXED HERE: Removed 'dealer' from the condition so cards are REVEALED during dealer phase
-    let hideDealer = (gamePhase === 'playing' || gamePhase === 'insurance');
-    
+    // LOGIC FIX: Only hide dealer cards during 'playing' or 'insurance'
+    // As soon as 'dealer' phase starts, this becomes false, revealing the cards.
+    const hideDealer = (gamePhase === 'playing' || gamePhase === 'insurance');
+
     let dealerStr = hideDealer
         ? cardText(dealerHand[0]) + ' ??'
         : dealerHand.map(cardText).join(' ');
-
+    
     document.getElementById('dealer-cards').innerText = dealerStr;
     
     document.getElementById('dealer-total').innerText = hideDealer
