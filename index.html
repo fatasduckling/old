@@ -71,10 +71,6 @@
             color: lime;
             font-weight: bold;
         }
-        #actions button, #insurance-actions button {
-            font-size: 20px;
-            padding: 15px 30px;
-        }
         #insurance-btn {
             background: #ff4444;
         }
@@ -163,6 +159,13 @@
     <p>
         <label>Starting bankroll ($):</label><br>
         <input type="number" id="starting-bankroll" value="5000" min="1000" step="500">
+    </p>
+    <p>
+        <label>Allow Deal button during play (for testing):</label><br>
+        <select id="mid-round-deal">
+            <option value="true">Yes</option>
+            <option value="false" selected>No</option>
+        </select>
     </p>
     <button onclick="applySettings()">Apply & Close</button>
 </div>
