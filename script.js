@@ -1,9 +1,9 @@
-// script.js - Fully Working Version (Tested December 2025)
+// script.js - Complete & Working Blackjack Hi-Lo Trainer
 
 let deck = [];
 let playerHands = [];
 let dealerHand = [];
-let seenCards = [];  // Persistent across hands
+let seenCards = [];
 let bankroll = 5000;
 let baseUnit = 25;
 let currentBet = 25;
@@ -43,7 +43,6 @@ const fab4 = {
 function openSettings() {
     document.getElementById('settings-menu').style.display = 'block';
     document.getElementById('overlay').style.display = 'block';
-
     document.getElementById('num-decks').value = numDecks;
     document.getElementById('das').value = dasAllowed.toString();
     document.getElementById('soft17').value = dealerHitsSoft17.toString();
@@ -62,9 +61,7 @@ function applySettings() {
     dealerHitsSoft17 = document.getElementById('soft17').value === 'true';
     lateSurrenderAllowed = document.getElementById('surrender').value === 'true';
 
-    if (numDecks !== oldNumDecks) {
-        seenCards = [];
-    }
+    if (numDecks !== oldNumDecks) seenCards = [];
 
     createDeck();
     closeSettings();
@@ -125,10 +122,7 @@ function calculateTotal(hand) {
         if (val === 11) aces++;
         total += val;
     }
-    while (total > 21 && aces > 0) {
-        total -= 10;
-        aces--;
-    }
+    while (total > 21 && aces--) total -= 10;
     return total;
 }
 
@@ -354,6 +348,6 @@ function checkCount() {
     }, 3000);
 }
 
-// Initialize
+// Initialize the game
 createDeck();
 updateDisplay();
