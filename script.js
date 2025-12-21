@@ -302,7 +302,6 @@ function updateDisplay() {
     updatePlayAccuracy();
     updateBetSuggestion();
 
-    // Logic Fix: Reveal cards as soon as phase is 'dealer'
     let hideDealer = (gamePhase === 'playing' || gamePhase === 'insurance');
 
     let dealerStr = hideDealer
