@@ -295,12 +295,6 @@ function updateButtonVisibility() {
     }
 }
 
-gamePhase === 'dealer'. It should actually reveal them as soon as the dealer phase starts.
-
-Here is the fix. Replace your existing updateDisplay function with this corrected version:
-
-JavaScript
-
 function updateDisplay() {
     document.getElementById('bankroll').innerText = bankroll.toLocaleString();
     document.getElementById('decks-left').innerText = (deck.length / 52).toFixed(1);
@@ -308,16 +302,14 @@ function updateDisplay() {
     updatePlayAccuracy();
     updateBetSuggestion();
 
-    // LOGIC FIX: Only hide dealer cards during 'playing' or 'insurance'
-    // As soon as 'dealer' phase starts, this becomes false, revealing the cards.
-    const hideDealer = (gamePhase === 'playing' || gamePhase === 'insurance');
+    // Logic Fix: Reveal cards as soon as phase is 'dealer'
+    let hideDealer = (gamePhase === 'playing' || gamePhase === 'insurance');
 
     let dealerStr = hideDealer
         ? cardText(dealerHand[0]) + ' ??'
         : dealerHand.map(cardText).join(' ');
     
     document.getElementById('dealer-cards').innerText = dealerStr;
-    
     document.getElementById('dealer-total').innerText = hideDealer
         ? '?'
         : calculateTotal(dealerHand);
@@ -467,6 +459,9 @@ function nextHand() {
         const allBust = playerHands.every(h => calculateTotal(h) > 21);
         if (allBust) {
             document.getElementById('result').innerText = "All hands bust — you lose";
+            // Important: Change phase to dealer so cards are revealed even on a bust
+            gamePhase = 'dealer';
+            updateDisplay();
             evaluateResults();
         } else {
             dealerPlay();
@@ -475,11 +470,10 @@ function nextHand() {
     updateDisplay();
 }
 
+// Logic Fix: Use a timeout loop so we can see the cards being dealt
 function dealerPlay() {
     gamePhase = 'dealer';
-    updateDisplay(); // Immediately reveals the hole card
-
-    // Wait 800ms before the dealer starts hitting (so you can see the hole card first)
+    updateDisplay(); // Reveal hole card immediately
     setTimeout(dealerHitStep, 800);
 }
 
@@ -487,16 +481,11 @@ function dealerHitStep() {
     const total = calculateTotal(dealerHand);
     const soft = isSoft(dealerHand);
 
-    // Dealer hits if total < 17 OR (Soft 17 and rule is enabled)
-    // Note: We use the existing isSoft() function to ensure we don't hit a Hard 17 containing an Ace
     if (total < 17 || (total === 17 && dealerHitsSoft17 && soft)) {
         dealCard(dealerHand);
         updateDisplay();
-        
-        // Wait 800ms before checking/hitting again
         setTimeout(dealerHitStep, 800);
     } else {
-        // Dealer is done
         evaluateResults();
     }
 }
@@ -542,7 +531,6 @@ function evaluateResults() {
     bankroll += net;
     document.getElementById('result').innerHTML = result + `<br>Net: ${net >= 0 ? '+' : ''}$${net}`;
 
-    // Show the running count guess section at end of EVERY round
     document.getElementById('end-round').style.display = 'block';
     document.getElementById('feedback').innerText = "Round over — guess the running count!";
 
@@ -550,7 +538,6 @@ function evaluateResults() {
 }
 
 function checkCount() {
-    // FIXED: Calculate actual running count BEFORE resetting seenCards
     const actualRC = seenCards.reduce((s, c) => s + getHiLoTag(c), 0);
     const guess = parseInt(document.getElementById('count-guess').value) || 0;
 
@@ -567,7 +554,6 @@ function checkCount() {
     updateCountAccuracy();
 
     setTimeout(() => {
-        // Full clean reset
         document.getElementById('end-round').style.display = 'none';
         document.getElementById('count-feedback').innerHTML = '';
         document.getElementById('result').innerHTML = '';
@@ -580,10 +566,10 @@ function checkCount() {
 
         playerHands = [];
         dealerHand = [];
-        seenCards = [];  // Reset AFTER calculation
+        seenCards = [];
 
         gamePhase = 'betting';
-        updateDisplay();  // Deal button reappears here
+        updateDisplay();
         updateBetSuggestion();
     }, 4000);
 }
