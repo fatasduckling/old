@@ -1,26 +1,24 @@
-// script.js - Full Blackjack Hi-Lo Trainer (Text Cards Version)
+// script.js - Full Working Blackjack Hi-Lo Trainer (Text Cards)
 
 let deck = [];
-let playerHands = [];  // Array of hands (supports splitting)
+let playerHands = [];
 let dealerHand = [];
 let runningCount = 0;
 let seenCards = [];
 let bankroll = 5000;
 let baseUnit = 25;
 let currentBet = 25;
-let currentHandIndex = 0;  // For playing multiple split hands
+let currentHandIndex = 0;
 let gamePhase = 'betting'; // betting, playing, dealer, roundEnd
 
 const suits = ['♠', '♥', '♦', '♣'];
 const ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
-let numDecks = 6; // Change if needed
+const numDecks = 6;
 
-// Settings (match your rules)
 const dasAllowed = true;
 const dealerHitsSoft17 = true;
 const lateSurrenderAllowed = true;
 
-// Illustrious 18 + Fab 4
 const illustrious18 = {
     'insurance': 3,
     16: {10: 0},
@@ -59,13 +57,10 @@ function shuffle(array) {
 }
 
 function dealCard(toHand) {
-    if (deck.length < 10) {
-        createDeck(); // Reshuffle when low
-    }
+    if (deck.length < 20) createDeck(); // Reshuffle when low
     const card = deck.pop();
     toHand.push(card);
     seenCards.push(card);
-    runningCount += getHiLoTag(card);
     return card;
 }
 
@@ -77,7 +72,7 @@ function getHiLoTag(card) {
 }
 
 function cardText(card) {
-    return card; // e.g., "A♠", "10♥"
+    return card;
 }
 
 function getValue(card) {
@@ -95,87 +90,59 @@ function calculateTotal(hand) {
         if (val === 11) aces++;
         total += val;
     }
-    while (total > 21 && aces > 0) {
-        total -= 10;
-        aces--;
-    }
+    while (total > 21 && aces--) total -= 10;
     return total;
 }
 
 function isSoft(hand) {
-    let total = 0;
-    let aces = 0;
-    for (let card of hand) {
-        let val = getValue(card);
-        if (val === 11) aces++;
-        total += val;
-    }
-    return aces > 0 && total - 10 <= 21;
+    const total = calculateTotal(hand);
+    return hand.some(c => c.startsWith('A')) && total <= 11;
 }
 
 function isPair(hand) {
     return hand.length === 2 && getValue(hand[0]) === getValue(hand[1]);
 }
 
-function getDealerUpcardVal() {
+function getDealerUpVal() {
     if (dealerHand.length === 0) return null;
     const rank = dealerHand[0].slice(0, -1);
     return rank === 'A' ? 'A' : getValue(dealerHand[0]);
 }
 
-function getBestAction(hand, dealerUp) {
+function getBestAction(hand) {
     const total = calculateTotal(hand);
     const tc = getCurrentTrueCount();
+    const up = getDealerUpVal();
 
-    // Insurance
-    if (dealerUp === 'A' && tc >= illustrious18['insurance']) {
-        document.getElementById('best-move').innerText = 'Insurance recommended!';
+    if (up === 'A' && tc >= illustrious18['insurance']) {
+        document.getElementById('best-move').innerText += ' (Insurance advised)';
     }
 
-    // Surrender
     if (lateSurrenderAllowed && hand.length === 2) {
-        if (total in fab4 && dealerUp in fab4[total] && tc <= fab4[total][dealerUp]) {
-            return 'surrender';
-        }
+        if (total in fab4 && up in fab4[total] && tc <= fab4[total][up]) return 'surrender';
     }
 
-    // Split 10s
     if (isPair(hand) && getValue(hand[0]) === 10) {
-        const key = '10-10';
-        if (dealerUp in illustrious18[key] && tc >= illustrious18[key][dealerUp]) {
-            return 'split';
-        }
+        if (up in illustrious18['10-10'] && tc >= illustrious18['10-10'][up]) return 'split';
     }
 
-    // Standing deviations
     if (!isSoft(hand) && total >= 12 && total <= 16) {
-        if (total in illustrious18 && dealerUp in illustrious18[total] && tc >= illustrious18[total][dealerUp]) {
-            return 'stand';
-        }
+        if (total in illustrious18 && up in illustrious18[total] && tc >= illustrious18[total][up]) return 'stand';
     }
 
-    // Doubling deviations
     if (total >= 8 && total <= 11) {
-        if (total in illustrious18 && dealerUp in illustrious18[total] && tc >= illustrious18[total][dealerUp]) {
-            return 'double';
-        }
+        if (total in illustrious18 && up in illustrious18[total] && tc >= illustrious18[total][up]) return 'double';
     }
 
-    // Basic strategy fallback
+    // Basic fallback
     if (isPair(hand)) {
-        const rank = getValue(hand[0]);
-        if (rank === 11) return 'split';
-        const pairMap = {2:'split',3:'split',4:'hit',5:'double',6:'split',7:'split',8:'split',9:'split',10:'stand'};
-        return pairMap[rank] || 'hit';
+        const r = getValue(hand[0]);
+        if (r === 11) return 'split';
+        const map = {2:'split',3:'split',4:'hit',5:'double',6:'split',7:'split',8:'split',9:'split',10:'stand'};
+        return map[r] || 'hit';
     }
-
-    if (isSoft(hand)) {
-        const softMap = {13:'hit',14:'hit',15:'hit',16:'hit',17:'hit',18:'stand',19:'stand',20:'stand'};
-        return softMap[total] || 'hit';
-    }
-
-    const hardMap = {8:'hit',9:'hit',10:'double',11:'double',12:'hit',13:'stand',14:'stand',15:'stand',16:'stand',17:'stand'};
-    return hardMap[total] || 'hit';
+    if (isSoft(hand)) return total >= 19 ? 'stand' : 'hit';
+    return total >= 17 ? 'stand' : total <= 11 ? 'double' : 'hit';
 }
 
 function getCurrentTrueCount() {
@@ -185,39 +152,38 @@ function getCurrentTrueCount() {
 
 function updateDisplay() {
     document.getElementById('bankroll').innerText = bankroll.toLocaleString();
-    document.getElementById('decks-left').innerText = Math.round(deck.length / 52 * 10) / 10;
+    document.getElementById('decks-left').innerText = (deck.length / 52).toFixed(1);
 
     // Dealer
-    let dealerHTML = cardText(dealerHand[0]);
-    if (gamePhase === 'playing') dealerHTML += ' ??';
-    else dealerHTML += dealerHand.slice(1).map(cardText).join(' ');
-    document.getElementById('dealer-cards').innerHTML = dealerHTML;
+    let dealerStr = cardText(dealerHand[0]);
+    if (gamePhase === 'playing') dealerStr += ' ??';
+    else dealerStr += ' ' + dealerHand.slice(1).map(cardText).join(' ');
+    document.getElementById('dealer-cards').innerText = dealerStr;
     document.getElementById('dealer-total').innerText = gamePhase === 'playing' ? '?' : calculateTotal(dealerHand);
 
-    // Player current hand
-    const hand = playerHands[currentHandIndex];
-    document.getElementById('player-cards').innerHTML = hand.map(cardText).join(' ');
+    // Player
+    const hand = playerHands[currentHandIndex] || [];
+    document.getElementById('player-cards').innerText = hand.map(cardText).join(' ');
     document.getElementById('player-total').innerText = calculateTotal(hand);
 
     // Best move
-    const dealerUp = getDealerUpcardVal();
-    const best = getBestAction(hand, dealerUp);
-    document.getElementById('best-move').innerText = best.toUpperCase();
+    if (gamePhase === 'playing' && hand.length > 0) {
+        document.getElementById('best-move').innerText = getBestAction(hand).toUpperCase();
+    }
 
-    // Actions visibility
     document.getElementById('actions').style.display = gamePhase === 'playing' ? 'block' : 'none';
     document.getElementById('end-round').style.display = gamePhase === 'roundEnd' ? 'block' : 'none';
 }
 
 function startHand() {
     currentBet = parseInt(document.getElementById('bet-input').value) || baseUnit;
-    if (currentBet > bankroll) {
-        alert("Not enough bankroll!");
+    if (currentBet > bankroll || currentBet < baseUnit) {
+        alert("Invalid bet!");
         return;
     }
 
     seenCards = [];
-    runningCount = 0; // Will be recalculated at end
+    runningCount = 0;
 
     playerHands = [[]];
     dealerHand = [];
@@ -227,33 +193,26 @@ function startHand() {
     dealCard(playerHands[0]);
     dealCard(dealerHand);
     dealCard(playerHands[0]);
-    dealCard(dealerHand); // Hole card
+    dealCard(dealerHand);
 
-    if (calculateTotal(playerHands[0]) === 21) {
-        endPlayerTurn();
-    }
+    if (calculateTotal(playerHands[0]) === 21) dealerPlay();
 
     updateDisplay();
 }
 
 function hit() {
     dealCard(playerHands[currentHandIndex]);
-    if (calculateTotal(playerHands[currentHandIndex]) > 21) {
-        nextHandOrDealer();
-    }
+    if (calculateTotal(playerHands[currentHandIndex]) > 21) nextHand();
     updateDisplay();
 }
 
-function stand() {
-    nextHandOrDealer();
-}
+function stand() { nextHand(); }
 
 function doubleDown() {
     if (playerHands[currentHandIndex].length !== 2) return;
-    currentBet *= 2; // Double the bet for this hand
+    currentBet *= 2;
     dealCard(playerHands[currentHandIndex]);
-    nextHandOrDealer();
-    updateDisplay();
+    nextHand();
 }
 
 function split() {
@@ -262,18 +221,18 @@ function split() {
     playerHands[currentHandIndex] = [hand[0]];
     playerHands.push([hand[1]]);
     dealCard(playerHands[currentHandIndex]);
-    dealCard(playerHands[playerHands.length-1]);
+    dealCard(playerHands[playerHands.length - 1]);
     updateDisplay();
 }
 
 function surrender() {
     if (playerHands[currentHandIndex].length !== 2 || !lateSurrenderAllowed) return;
     bankroll -= currentBet / 2;
-    document.getElementById('result').innerText = `Surrendered - Lost $${currentBet/2}`;
+    document.getElementById('result').innerText = `Surrendered — Lost $${currentBet / 2}`;
     endRound();
 }
 
-function nextHandOrDealer() {
+function nextHand() {
     if (currentHandIndex < playerHands.length - 1) {
         currentHandIndex++;
     } else {
@@ -286,9 +245,10 @@ function dealerPlay() {
     gamePhase = 'dealer';
     updateDisplay();
 
-    while (calculateTotal(dealerHand) < 17 || 
+    while (calculateTotal(dealerHand) < 17 ||
            (calculateTotal(dealerHand) === 17 && dealerHitsSoft17 && dealerHand.some(c => c.startsWith('A')))) {
         dealCard(dealerHand);
+        updateDisplay();
     }
 
     evaluateResults();
@@ -296,52 +256,51 @@ function dealerPlay() {
 
 function evaluateResults() {
     gamePhase = 'roundEnd';
-    let resultText = '';
+    let result = '';
     let net = 0;
 
-    for (let hand of playerHands) {
+    playerHands.forEach(hand => {
         const pTotal = calculateTotal(hand);
         const dTotal = calculateTotal(dealerHand);
-        const wager = currentBet; // Simplified - assumes no double tracking per hand
+        let wager = currentBet;
 
         if (pTotal > 21) {
             net -= wager;
-            resultText += 'Bust - Lose<br>';
+            result += 'Bust — Lose<br>';
         } else if (dTotal > 21 || pTotal > dTotal) {
-            if (hand.length === 2 && pTotal === 21 && !dealerHand.some(c => calculateTotal([c, dealerHand[1]]) === 21)) {
+            if (hand.length === 2 && pTotal === 21) {
                 net += wager * 1.5;
-                resultText += 'BLACKJACK! +1.5x<br>';
+                result += 'BLACKJACK! +1.5x<br>';
             } else {
                 net += wager;
-                resultText += 'Win<br>';
+                result += 'Win<br>';
             }
         } else if (pTotal === dTotal) {
-            resultText += 'Push<br>';
+            result += 'Push<br>';
         } else {
             net -= wager;
-            resultText += 'Lose<br>';
+            result += 'Lose<br>';
         }
-    }
+    });
 
     bankroll += net;
-    document.getElementById('result').innerHTML = resultText + `<br>Net: $${net > 0 ? '+' : ''}${net}`;
+    document.getElementById('result').innerHTML = result + `<br>Net: ${net >= 0 ? '+' : ''}$${net}`;
     updateDisplay();
 }
 
 function checkCount() {
-    const actual = sum(getHiLoTag(c) for (let c of seenCards));
-    const guess = parseInt(document.getElementById('count-guess').value);
+    const actual = seenCards.reduce((sum, c) => sum + getHiLoTag(c), 0);
+    const guess = parseInt(document.getElementById('count-guess').value) || 0;
 
-    document.getElementById('count-feedback').innerHTML = 
-        guess === actual 
+    document.getElementById('count-feedback').innerHTML =
+        guess === actual
             ? `✓ Correct! Running count: ${actual}`
-            : `✗ Wrong. Actual: ${actual} (you guessed ${guess})`;
+            : `✗ Wrong — Actual: ${actual} (you guessed ${guess})`;
 
-    const decksAtStart = numDecks - Math.round((52*numDecks - deck.length - seenCards.length) / 52);
-    const trueCountStart = Math.round(actual / decksAtStart * 10) / 10;
-    document.getElementById('count-feedback').innerHTML += `<br>True count at start: ~${trueCountStart}`;
+    const tcStart = Math.round(actual / numDecks * 10) / 10;
+    document.getElementById('count-feedback').innerHTML += `<br>True count at start ≈ ${tcStart}`;
 }
 
-// Initial setup
+// Initialize
 createDeck();
 updateDisplay();
