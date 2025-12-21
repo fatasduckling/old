@@ -1,4 +1,4 @@
-// script.js - Final Fix: Deal Button Visibility Correctly Respects Setting
+// script.js - Final Fixed Version
 
 let deck = [];
 let playerHands = [];
@@ -23,7 +23,7 @@ let numDecks = 6;
 let dasAllowed = true;
 let dealerHitsSoft17 = true;
 let lateSurrenderAllowed = true;
-let midRoundDealAllowed = false; // Default: No
+let midRoundDealAllowed = false;
 
 const suits = ['♠', '♥', '♦', '♣'];
 const ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
@@ -148,39 +148,60 @@ function getDealerUpVal() {
     return rank === 'A' ? 'A' : getValue(dealerHand[0]);
 }
 
+// Fixed accurate basic strategy + deviations
 function getCorrectAction(hand) {
     const total = calculateTotal(hand);
     const tc = getCurrentTrueCount();
     const up = getDealerUpVal();
 
+    // Surrender deviations
     if (lateSurrenderAllowed && hand.length === 2) {
         if (total in fab4 && up in fab4[total] && tc <= fab4[total][up]) return 'surrender';
     }
 
+    // Split 10s deviation
     if (isPair(hand) && getValue(hand[0]) === 10) {
         if (up in illustrious18['10-10'] && tc >= illustrious18['10-10'][up]) return 'split';
     }
 
+    // Standing deviations
     if (total >= 12 && total <= 16) {
         if (total in illustrious18 && up in illustrious18[total] && tc >= illustrious18[total][up]) return 'stand';
     }
 
+    // Doubling deviations
     if (total >= 8 && total <= 11) {
         if (total in illustrious18 && up in illustrious18[total] && tc >= illustrious18[total][up]) return 'double';
     }
 
+    // Accurate basic strategy (multi-deck, H17, DAS)
     if (isPair(hand)) {
         const r = getValue(hand[0]);
         if (r === 11) return 'split';
-        const map = {2:'split',3:'split',4:'hit',5:'double',6:'split',7:'split',8:'split',9:'split',10:'stand'};
-        return map[r] || 'hit';
+        if (r === 10) return 'stand';
+        if (r === 9) return up <= 9 ? 'split' : 'stand';
+        if (r === 8) return 'split';
+        if (r === 7) return up <= 7 ? 'split' : 'hit';
+        if (r === 6) return up <= 6 ? 'split' : 'hit';
+        if (r === 5) return 'double';
+        if (r === 4) return up >= 5 && up <= 6 ? 'split' : 'hit';
+        if (r === 3 || r === 2) return up <= 7 ? 'split' : 'hit';
     }
 
+    // Soft hands
     if (hand.some(c => c.startsWith('A'))) {
-        return total >= 19 ? 'stand' : 'hit';
+        if (total >= 20) return 'stand';
+        if (total === 19) return 'stand';
+        if (total === 18) return up <= 6 ? 'double' : (up <= 8 ? 'stand' : 'hit');
+        if (total === 17) return up <= 6 ? 'double' : 'hit';
+        if (total <= 16) return up <= 6 ? 'double' : 'hit';
     }
 
-    return total >= 17 ? 'stand' : total <= 11 ? 'double' : 'hit';
+    // Hard hands
+    if (total >= 17) return 'stand';
+    if (total <= 11) return 'double';
+    if (total === 12) return up >= 4 && up <= 6 ? 'stand' : 'hit';
+    return 'hit'; // 13-16 vs 7-A
 }
 
 function getCurrentTrueCount() {
@@ -254,16 +275,12 @@ function updateDisplay() {
     const dealBtn = document.getElementById('deal-button');
     if (gamePhase === 'betting') {
         dealBtn.style.display = 'inline-block';
-    } else if (midRoundDealAllowed) {
-        dealBtn.style.display = 'inline-block';
     } else {
-        dealBtn.style.display = 'none';
+        dealBtn.style.display = midRoundDealAllowed ? 'inline-block' : 'none';
     }
 
     updateButtonVisibility();
 }
-
-// ... (rest of the code: startHand, takeInsurance, declineInsurance, proceedAfterInsurance, playerMove, nextHand, dealerPlay, evaluateResults, checkCount)
 
 function startHand() {
     currentBet = parseInt(document.getElementById('bet-input').value) || baseUnit;
