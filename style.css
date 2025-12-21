@@ -1,0 +1,6 @@
+body { font-family: Arial, sans-serif; text-align: center; background: green; color: white; }
+#dealer-cards, #player-cards { margin: 20px; }
+#dealer-cards img, #player-cards img { width: 100px; margin: 5px; border-radius: 10px; box-shadow: 0 4px 8px black; }
+button { padding: 10px 20px; margin: 10px; font-size: 18px; }
+input { padding: 10px; font-size: 18px; }
+h1, h2 { color: gold; }
