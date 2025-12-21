@@ -1,10 +1,44 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>My First GitHub Website</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blackjack Hi-Lo Trainer</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <h1>Hello World!</h1>
-    <p>This is my website hosted on GitHub Pages.</p>
+    <h1>Blackjack with Hi-Lo Counting (Full Illustrious 18 + Fab 4)</h1>
+    
+    <div id="game">
+        <p>Decks remaining: <span id="decks-left">?</span></p>
+        <p>Bankroll: $<span id="bankroll">5000</span> | Bet: $<input type="number" id="bet-input" min="25" value="25"></p>
+        <button onclick="startHand()">Deal New Hand</button>
+        
+        <h2>Dealer: <span id="dealer-total">?</span></h2>
+        <div id="dealer-cards"></div>
+        
+        <h2>Your Hand: <span id="player-total">?</span></h2>
+        <div id="player-cards"></div>
+        
+        <div id="actions">
+            <button onclick="hit()">Hit</button>
+            <button onclick="stand()">Stand</button>
+            <button onclick="doubleDown()">Double</button>
+            <button onclick="split()">Split</button> <!-- If pair -->
+            <button onclick="surrender()">Surrender</button> <!-- If allowed -->
+        </div>
+        
+        <p>Best move: <span id="best-move">?</span></p>
+        
+        <div id="end-round" style="display:none;">
+            <p>Your running count guess: <input type="number" id="count-guess"></p>
+            <button onclick="checkCount()">Submit Guess</button>
+            <p id="count-feedback"></p>
+        </div>
+        
+        <p id="result"></p>
+    </div>
+    
+    <script src="script.js"></script>
 </body>
 </html>
