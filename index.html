@@ -43,7 +43,7 @@
         input[type="number"] {
             padding: 10px;
             font-size: 18px;
-            width: 100px;
+            width: 120px;
         }
         #feedback {
             font-weight: bold;
@@ -55,6 +55,11 @@
             font-size: 28px;
             font-weight: bold;
             color: cyan;
+        }
+        #bet-suggestion {
+            font-size: 20px;
+            color: lime;
+            font-weight: bold;
         }
         #count-feedback {
             font-size: 22px;
@@ -69,6 +74,12 @@
         #actions button {
             font-size: 20px;
             padding: 15px 30px;
+        }
+        #insurance-btn {
+            background: #ff4444;
+        }
+        #insurance-btn:hover {
+            background: #ff6666;
         }
         #settings-btn {
             position: absolute;
@@ -89,7 +100,7 @@
             z-index: 100;
             border: 3px solid gold;
         }
-        #settings-menu select {
+        #settings-menu select, #settings-menu input {
             padding: 10px;
             font-size: 18px;
             margin: 10px;
@@ -143,12 +154,16 @@
             <option value="false">No</option>
         </select>
     </p>
+    <p>
+        <label>Starting bankroll ($):</label><br>
+        <input type="number" id="starting-bankroll" value="5000" min="1000" step="500">
+    </p>
     <button onclick="applySettings()">Apply & Close</button>
 </div>
 
 <div id="game">
     <h1>Blackjack Hi-Lo Counting Trainer</h1>
-    <p>Full Illustrious 18 + Fab 4 • Feedback after move • True count visible</p>
+    <p>Full Illustrious 18 + Fab 4 + Insurance + Betting Ramp</p>
 
     <div class="section">
         <p>
@@ -157,6 +172,7 @@
             True Count: <span id="true-count">0.0</span>
         </p>
         <p id="play-accuracy">Correct plays: 0/0 (0%)</p>
+        <p id="bet-suggestion">Suggested bet: $25 (1 unit)</p>
         <p>
             Place your bet: $<input type="number" id="bet-input" min="25" step="25" value="25">
             <button id="deal-button" onclick="startHand()">Deal New Hand</button>
@@ -179,6 +195,7 @@
         <button onclick="playerMove('double')">Double</button>
         <button onclick="playerMove('split')">Split</button>
         <button onclick="playerMove('surrender')">Surrender</button>
+        <button id="insurance-btn" style="display:none;" onclick="takeInsurance()">Insurance</button>
     </div>
 
     <div class="section">
