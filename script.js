@@ -235,4 +235,126 @@ function startHand() {
 }
 
 function playerMove(action) {
-    const
+    const hand = playerHands[currentHandIndex];
+
+    if (hand.length === 2 && !moveJustMade) {
+        totalDecisions++;
+        const correct = getCorrectAction(hand);
+        if (action === correct) {
+            correctDecisions++;
+            document.getElementById('feedback').innerText = "✓ Correct play!";
+        } else {
+            document.getElementById('feedback').innerText = `✗ Wrong — correct was ${correct.toUpperCase()}`;
+        }
+        moveJustMade = true;
+    }
+
+    if (action === 'hit') {
+        dealCard(hand);
+        if (calculateTotal(hand) > 21) nextHand();
+    } else if (action === 'stand') {
+        nextHand();
+    } else if (action === 'double') {
+        if (hand.length === 2) {
+            bankroll -= currentBet;
+            currentBet *= 2;
+            dealCard(hand);
+            nextHand();
+        }
+    } else if (action === 'split') {
+        if (isPair(hand) && playerHands.length < 4) {
+            bankroll -= currentBet;
+            const card = hand.pop();
+            playerHands.push([card]);
+            dealCard(hand);
+            dealCard(playerHands[playerHands.length - 1]);
+            moveJustMade = false;
+        }
+    } else if (action === 'surrender') {
+        if (hand.length === 2 && lateSurrenderAllowed) {
+            bankroll += currentBet / 2;
+            document.getElementById('result').innerText = "Surrendered — lost half";
+            nextHand();
+        }
+    }
+
+    updateDisplay();
+}
+
+function nextHand() {
+    if (currentHandIndex < playerHands.length - 1) {
+        currentHandIndex++;
+        moveJustMade = false;
+        document.getElementById('feedback').innerText = "Make your move...";
+    } else {
+        dealerPlay();
+    }
+    updateDisplay();
+}
+
+function dealerPlay() {
+    gamePhase = 'dealer';
+    updateDisplay();
+
+    while (calculateTotal(dealerHand) < 17 ||
+           (calculateTotal(dealerHand) === 17 && dealerHitsSoft17 && dealerHand.some(c => c.startsWith('A')))) {
+        dealCard(dealerHand);
+    }
+
+    evaluateResults();
+}
+
+function evaluateResults() {
+    gamePhase = 'roundEnd';
+    let result = '';
+    let net = 0;
+
+    playerHands.forEach(hand => {
+        const pTotal = calculateTotal(hand);
+        const dTotal = calculateTotal(dealerHand);
+
+        if (pTotal > 21) {
+            result += 'Bust — Lose<br>';
+        } else if (dTotal > 21 || pTotal > dTotal) {
+            if (pTotal === 21 && hand.length === 2) {
+                net += currentBet * 1.5;
+                result += 'BLACKJACK! +1.5x<br>';
+            } else {
+                net += currentBet;
+                result += 'Win<br>';
+            }
+        } else if (pTotal === dTotal) {
+            net += currentBet;
+            result += 'Push<br>';
+        } else {
+            result += 'Lose<br>';
+        }
+    });
+
+    bankroll += net;
+    document.getElementById('result').innerHTML = result + `<br>Net: ${net >= 0 ? '+' : ''}$${net}`;
+    updateDisplay();
+}
+
+function checkCount() {
+    const actualRC = seenCards.reduce((s, c) => s + getHiLoTag(c), 0);
+    const guess = parseInt(document.getElementById('count-guess').value) || 0;
+
+    if (guess === actualRC) {
+        document.getElementById('count-feedback').innerHTML = `<strong style="color:lime">✓ CORRECT!</strong> Running count was ${actualRC}`;
+    } else {
+        document.getElementById('count-feedback').innerHTML = `<strong style="color:red">✗ WRONG</strong> — Running count was ${actualRC} (you guessed ${guess})`;
+    }
+
+    setTimeout(() => {
+        gamePhase = 'betting';
+        document.getElementById('feedback').innerText = "Ready — press Deal to start";
+        document.getElementById('count-feedback').innerHTML = '';
+        document.getElementById('result').innerHTML = '';
+        updateDisplay();
+    }, 3000);
+}
+
+// Init
+createDeck();
+updateDisplay();
