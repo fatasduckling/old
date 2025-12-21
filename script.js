@@ -1,15 +1,17 @@
-// script.js - Complete Working Blackjack Hi-Lo Trainer
+// script.js - Final Version with Insurance, Betting Ramp, Bankroll Setting
 
 let deck = [];
 let playerHands = [];
 let dealerHand = [];
-let seenCards = [];  // Accumulates all cards in the shoe
+let seenCards = [];
 let bankroll = 5000;
 let baseUnit = 25;
 let currentBet = 25;
 let currentHandIndex = 0;
 let gamePhase = 'betting';
 let moveJustMade = false;
+let insuranceTaken = false;
+let insuranceBet = 0;
 
 let totalDecisions = 0;
 let correctDecisions = 0;
@@ -47,6 +49,7 @@ function openSettings() {
     document.getElementById('das').value = dasAllowed.toString();
     document.getElementById('soft17').value = dealerHitsSoft17.toString();
     document.getElementById('surrender').value = lateSurrenderAllowed.toString();
+    document.getElementById('starting-bankroll').value = bankroll;
 }
 
 function closeSettings() {
@@ -60,6 +63,9 @@ function applySettings() {
     dasAllowed = document.getElementById('das').value === 'true';
     dealerHitsSoft17 = document.getElementById('soft17').value === 'true';
     lateSurrenderAllowed = document.getElementById('surrender').value === 'true';
+
+    const newBankroll = parseInt(document.getElementById('starting-bankroll').value);
+    if (newBankroll > 0) bankroll = newBankroll;
 
     if (numDecks !== oldNumDecks) seenCards = [];
 
@@ -181,6 +187,18 @@ function updateTrueCount() {
     document.getElementById('true-count').innerText = getCurrentTrueCount();
 }
 
+function updateBetSuggestion() {
+    const tc = getCurrentTrueCount();
+    let units = 1;
+    if (tc >= 1) units = 2;
+    if (tc >= 2) units = 4;
+    if (tc >= 3) units = 6;
+    if (tc >= 4) units = 8;
+    if (tc >= 5) units = 12;
+
+    document.getElementById('bet-suggestion').innerText = `Suggested bet: $${baseUnit * units} (${units} units)`;
+}
+
 function updatePlayAccuracy() {
     const pct = totalDecisions === 0 ? 0 : Math.round((correctDecisions / totalDecisions) * 100);
     document.getElementById('play-accuracy').innerText = `Correct plays: ${correctDecisions}/${totalDecisions} (${pct}%)`;
@@ -191,6 +209,7 @@ function updateDisplay() {
     document.getElementById('decks-left').innerText = (deck.length / 52).toFixed(1);
     updateTrueCount();
     updatePlayAccuracy();
+    updateBetSuggestion();
 
     let dealerStr = gamePhase === 'playing' ? cardText(dealerHand[0]) + ' ??' : dealerHand.map(cardText).join(' ');
     document.getElementById('dealer-cards').innerText = dealerStr;
@@ -202,6 +221,14 @@ function updateDisplay() {
 
     document.getElementById('actions').style.display = gamePhase === 'playing' ? 'block' : 'none';
     document.getElementById('end-round').style.display = gamePhase === 'roundEnd' ? 'block' : 'none';
+
+    // Insurance button
+    const insuranceBtn = document.getElementById('insurance-btn');
+    if (gamePhase === 'playing' && dealerHand.length === 2 && dealerHand[0].startsWith('A') && getCurrentTrueCount() >= 3 && !insuranceTaken) {
+        insuranceBtn.style.display = 'inline-block';
+    } else {
+        insuranceBtn.style.display = 'none';
+    }
 }
 
 function startHand() {
@@ -211,6 +238,8 @@ function startHand() {
         return;
     }
     bankroll -= currentBet;
+    insuranceTaken = false;
+    insuranceBet = 0;
 
     playerHands = [[]];
     dealerHand = [];
@@ -225,6 +254,25 @@ function startHand() {
 
     document.getElementById('feedback').innerText = "Make your move...";
     updateDisplay();
+}
+
+function takeInsurance() {
+    insuranceBet = currentBet / 2;
+    if (bankroll < insuranceBet) {
+        alert("Not enough bankroll for insurance!");
+        return;
+    }
+    bankroll -= insuranceBet;
+    insuranceTaken = true;
+    document.getElementById('feedback').innerText = "Insurance taken!";
+    updateDisplay();
+
+    // Check immediately if dealer has Blackjack
+    if (calculateTotal(dealerHand) === 21) {
+        bankroll += insuranceBet * 3; // 2:1 payout + return stake
+        document.getElementById('result').innerText = "Dealer Blackjack! Insurance wins.";
+        dealerPlay(); // End hand
+    }
 }
 
 function playerMove(action) {
@@ -302,12 +350,19 @@ function evaluateResults() {
     let result = '';
     let net = 0;
 
+    const dealerBJ = calculateTotal(dealerHand) === 21 && dealerHand.length === 2;
+
     playerHands.forEach(hand => {
         const pTotal = calculateTotal(hand);
         const dTotal = calculateTotal(dealerHand);
 
         if (pTotal > 21) {
             result += 'Bust — Lose<br>';
+        } else if (dealerBJ && hand.length === 2 && pTotal === 21) {
+            net += currentBet; // Push on player BJ vs dealer BJ
+            result += 'Push (both Blackjack)<br>';
+        } else if (dealerBJ) {
+            result += 'Dealer Blackjack — Lose<br>';
         } else if (dTotal > 21 || pTotal > dTotal) {
             if (pTotal === 21 && hand.length === 2) {
                 net += currentBet * 1.5;
@@ -323,6 +378,12 @@ function evaluateResults() {
             result += 'Lose<br>';
         }
     });
+
+    // Insurance payout
+    if (insuranceTaken && dealerBJ) {
+        net += insuranceBet * 3; // 2:1 + stake back
+        result += '<br>Insurance wins!';
+    }
 
     bankroll += net;
     document.getElementById('result').innerHTML = result + `<br>Net: ${net >= 0 ? '+' : ''}$${net}`;
@@ -351,3 +412,4 @@ function checkCount() {
 // Initialize
 createDeck();
 updateDisplay();
+updateBetSuggestion();
