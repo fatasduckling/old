@@ -1,4 +1,4 @@
-// script.js - Final Version with Insurance, Betting Ramp, Bankroll Setting
+// script.js - Final Version: Valid Buttons Only + No Dealer Draw on Bust
 
 let deck = [];
 let playerHands = [];
@@ -204,6 +204,35 @@ function updatePlayAccuracy() {
     document.getElementById('play-accuracy').innerText = `Correct plays: ${correctDecisions}/${totalDecisions} (${pct}%)`;
 }
 
+function updateButtonVisibility() {
+    const hand = playerHands[currentHandIndex] || [];
+    const handTotal = calculateTotal(hand);
+    const isFirstMove = hand.length === 2;
+    const dealerUp = getDealerUpVal();
+    const tc = getCurrentTrueCount();
+
+    // Always visible
+    document.getElementById('hit-btn').style.display = 'inline-block';
+    document.getElementById('stand-btn').style.display = 'inline-block';
+
+    // Double only on first 2 cards
+    document.getElementById('double-btn').style.display = isFirstMove ? 'inline-block' : 'none';
+
+    // Split only if pair and <4 hands
+    document.getElementById('split-btn').style.display = isFirstMove && isPair(hand) && playerHands.length < 4 ? 'inline-block' : 'none';
+
+    // Surrender only on first move if allowed
+    document.getElementById('surrender-btn').style.display = isFirstMove && lateSurrenderAllowed ? 'inline-block' : 'none';
+
+    // Insurance only if dealer Ace and TC >= +3 and not taken
+    const insuranceBtn = document.getElementById('insurance-btn');
+    if (gamePhase === 'playing' && dealerUp === 'A' && tc >= illustrious18['insurance'] && !insuranceTaken && isFirstMove) {
+        insuranceBtn.style.display = 'inline-block';
+    } else {
+        insuranceBtn.style.display = 'none';
+    }
+}
+
 function updateDisplay() {
     document.getElementById('bankroll').innerText = bankroll.toLocaleString();
     document.getElementById('decks-left').innerText = (deck.length / 52).toFixed(1);
@@ -222,13 +251,7 @@ function updateDisplay() {
     document.getElementById('actions').style.display = gamePhase === 'playing' ? 'block' : 'none';
     document.getElementById('end-round').style.display = gamePhase === 'roundEnd' ? 'block' : 'none';
 
-    // Insurance button
-    const insuranceBtn = document.getElementById('insurance-btn');
-    if (gamePhase === 'playing' && dealerHand.length === 2 && dealerHand[0].startsWith('A') && getCurrentTrueCount() >= 3 && !insuranceTaken) {
-        insuranceBtn.style.display = 'inline-block';
-    } else {
-        insuranceBtn.style.display = 'none';
-    }
+    updateButtonVisibility();
 }
 
 function startHand() {
@@ -264,14 +287,13 @@ function takeInsurance() {
     }
     bankroll -= insuranceBet;
     insuranceTaken = true;
-    document.getElementById('feedback').innerText = "Insurance taken!";
+    document.getElementById('feedback').innerText = "Insurance taken ($" + insuranceBet + ")";
     updateDisplay();
 
-    // Check immediately if dealer has Blackjack
     if (calculateTotal(dealerHand) === 21) {
-        bankroll += insuranceBet * 3; // 2:1 payout + return stake
-        document.getElementById('result').innerText = "Dealer Blackjack! Insurance wins.";
-        dealerPlay(); // End hand
+        bankroll += insuranceBet * 3; // 2:1 payout + stake
+        document.getElementById('result').innerText = "Dealer has Blackjack — Insurance wins!";
+        evaluateResults();
     }
 }
 
@@ -314,7 +336,7 @@ function playerMove(action) {
     } else if (action === 'surrender') {
         if (hand.length === 2 && lateSurrenderAllowed) {
             bankroll += currentBet / 2;
-            document.getElementById('result').innerText = "Surrendered — lost half";
+            document.getElementById('result').innerText = "Surrendered — lost half bet";
             nextHand();
         }
     }
@@ -328,7 +350,15 @@ function nextHand() {
         moveJustMade = false;
         document.getElementById('feedback').innerText = "Make your move...";
     } else {
-        dealerPlay();
+        // If all player hands are bust, skip dealer play
+        const allBust = playerHands.every(h => calculateTotal(h) > 21);
+        if (allBust) {
+            document.getElementById('result').innerText = "All hands bust — you lose";
+            gamePhase = 'roundEnd';
+            updateDisplay();
+        } else {
+            dealerPlay();
+        }
     }
     updateDisplay();
 }
@@ -358,8 +388,8 @@ function evaluateResults() {
 
         if (pTotal > 21) {
             result += 'Bust — Lose<br>';
-        } else if (dealerBJ && hand.length === 2 && pTotal === 21) {
-            net += currentBet; // Push on player BJ vs dealer BJ
+        } else if (dealerBJ && pTotal === 21 && hand.length === 2) {
+            net += currentBet;
             result += 'Push (both Blackjack)<br>';
         } else if (dealerBJ) {
             result += 'Dealer Blackjack — Lose<br>';
@@ -379,9 +409,8 @@ function evaluateResults() {
         }
     });
 
-    // Insurance payout
     if (insuranceTaken && dealerBJ) {
-        net += insuranceBet * 3; // 2:1 + stake back
+        net += insuranceBet * 3;
         result += '<br>Insurance wins!';
     }
 
@@ -412,4 +441,3 @@ function checkCount() {
 // Initialize
 createDeck();
 updateDisplay();
-updateBetSuggestion();
