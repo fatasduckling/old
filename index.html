@@ -40,11 +40,6 @@
             cursor: pointer;
         }
         button:hover { background: #d4af37; }
-        button:disabled, button.hidden {
-            background: #666;
-            cursor: not-allowed;
-            display: none;
-        }
         input[type="number"] {
             padding: 10px;
             font-size: 18px;
@@ -71,16 +66,26 @@
             font-weight: bold;
             min-height: 60px;
         }
-        #play-accuracy {
+        #play-accuracy, #count-accuracy {
             font-size: 20px;
             color: lime;
             font-weight: bold;
+        }
+        #actions button, #insurance-actions button {
+            font-size: 20px;
+            padding: 15px 30px;
         }
         #insurance-btn {
             background: #ff4444;
         }
         #insurance-btn:hover {
             background: #ff6666;
+        }
+        #no-insurance-btn {
+            background: #666;
+        }
+        #no-insurance-btn:hover {
+            background: #888;
         }
         #settings-btn {
             position: absolute;
@@ -190,13 +195,18 @@
         <div id="player-cards" class="cards">?</div>
     </div>
 
+    <div id="insurance-actions" class="section" style="display:none;">
+        <p style="font-size:24px; color:orange;">Dealer shows Ace — Insurance offered?</p>
+        <button id="insurance-btn" onclick="takeInsurance()">Yes — Take Insurance</button>
+        <button id="no-insurance-btn" onclick="declineInsurance()">No — Decline</button>
+    </div>
+
     <div id="actions" class="section" style="display:none;">
         <button id="hit-btn" onclick="playerMove('hit')">Hit</button>
         <button id="stand-btn" onclick="playerMove('stand')">Stand</button>
         <button id="double-btn" onclick="playerMove('double')">Double</button>
         <button id="split-btn" onclick="playerMove('split')">Split</button>
         <button id="surrender-btn" onclick="playerMove('surrender')">Surrender</button>
-        <button id="insurance-btn" onclick="takeInsurance()">Insurance</button>
     </div>
 
     <div class="section">
@@ -205,6 +215,8 @@
 
     <div id="end-round" style="display:none;" class="section">
         <h2>End of Round - Running Count Check</h2>
+        <p>Previous running count was: <strong id="previous-rc">0</strong></p>
+        <p>Count accuracy: <span id="count-accuracy">0/0 (0%)</span></p>
         <p>Your running count guess: <input type="number" id="count-guess" placeholder="e.g. +5"></p>
         <button onclick="checkCount()">Submit Guess & Continue</button>
         <p id="count-feedback"></p>
