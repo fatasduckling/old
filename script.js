@@ -563,13 +563,12 @@ function checkCount() {
 }
 
 // Initialize
-
+createDeck();
+updateDisplay();
+updateCountAccuracy();
 
 // Event Listeners
 document.addEventListener('DOMContentLoaded', () => {
-    createDeck();
-    updateDisplay();
-    updateCountAccuracy();
     document.getElementById('settings-btn').addEventListener('click', openSettings);
     document.getElementById('apply-settings-btn').addEventListener('click', applySettings);
     document.getElementById('overlay').addEventListener('click', closeSettings);
