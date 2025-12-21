@@ -1,9 +1,9 @@
-// script.js - True Count Fixed: Counts ALL cards in the shoe
+// script.js - Fully Fixed Blackjack Hi-Lo Trainer (True Count Works Across Shoe)
 
 let deck = [];
 let playerHands = [];
 let dealerHand = [];
-let seenCards = [];  // Persistent across hands! Only resets on full reshuffle
+let seenCards = [];  // Persistent! Accumulates all seen cards in the shoe
 let bankroll = 5000;
 let baseUnit = 25;
 let currentBet = 25;
@@ -11,18 +11,20 @@ let currentHandIndex = 0;
 let gamePhase = 'betting';
 let moveJustMade = false;
 
+// Accuracy tracking
+let totalDecisions = 0;
+let correctDecisions = 0;
+
+// Rules
 let numDecks = 6;
 let dasAllowed = true;
 let dealerHitsSoft17 = true;
 let lateSurrenderAllowed = true;
 
-// Play accuracy
-let totalDecisions = 0;
-let correctDecisions = 0;
-
 const suits = ['♠', '♥', '♦', '♣'];
 const ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
 
+// Illustrious 18 + Fab 4
 const illustrious18 = {
     'insurance': 3,
     16: {10: 0},
@@ -64,7 +66,7 @@ function applySettings() {
     lateSurrenderAllowed = document.getElementById('surrender').value === 'true';
 
     if (numDecks !== oldNumDecks) {
-        seenCards = [];  // Only reset seen cards if deck count changes
+        seenCards = [];  // Reset count only if deck count changes
     }
 
     createDeck();
@@ -93,12 +95,11 @@ function shuffle(array) {
 
 function dealCard(toHand) {
     if (deck.length < 20) {
-        createDeck();
-        // Do NOT reset seenCards on normal reshuffle — only on deck count change
+        createDeck();  // Reshuffle but keep seenCards (persistent count)
     }
     const card = deck.pop();
     toHand.push(card);
-    seenCards.push(card);  // Accumulates forever until deck count change
+    seenCards.push(card);
     updateTrueCount();
     return card;
 }
@@ -355,6 +356,6 @@ function checkCount() {
     }, 3000);
 }
 
-// Init
+// Initialize
 createDeck();
 updateDisplay();
