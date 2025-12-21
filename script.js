@@ -1,9 +1,9 @@
-// script.js - Complete & Working Blackjack Hi-Lo Trainer
+// script.js - Complete Working Blackjack Hi-Lo Trainer
 
 let deck = [];
 let playerHands = [];
 let dealerHand = [];
-let seenCards = [];
+let seenCards = [];  // Accumulates all cards in the shoe
 let bankroll = 5000;
 let baseUnit = 25;
 let currentBet = 25;
@@ -348,6 +348,6 @@ function checkCount() {
     }, 3000);
 }
 
-// Initialize the game
+// Initialize
 createDeck();
 updateDisplay();
