@@ -1,4 +1,4 @@
-// script.js - Complete Working Version
+// script.js - Final Version with Previous Count & Mid-Round Deal Setting
 
 let deck = [];
 let playerHands = [];
@@ -10,14 +10,20 @@ let currentBet = 25;
 let currentHandIndex = 0;
 let gamePhase = 'betting';
 let moveJustMade = false;
+let insuranceTaken = false;
+let insuranceBet = 0;
 
 let totalDecisions = 0;
 let correctDecisions = 0;
+let totalCountGuesses = 0;
+let correctCountGuesses = 0;
+let previousRunningCount = 0;
 
 let numDecks = 6;
 let dasAllowed = true;
 let dealerHitsSoft17 = true;
 let lateSurrenderAllowed = true;
+let midRoundDealAllowed = false; // Default off
 
 const suits = ['♠', '♥', '♦', '♣'];
 const ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
@@ -48,6 +54,7 @@ function openSettings() {
     document.getElementById('soft17').value = dealerHitsSoft17.toString();
     document.getElementById('surrender').value = lateSurrenderAllowed.toString();
     document.getElementById('starting-bankroll').value = bankroll;
+    document.getElementById('mid-round-deal').value = midRoundDealAllowed.toString();
 }
 
 function closeSettings() {
@@ -61,6 +68,7 @@ function applySettings() {
     dasAllowed = document.getElementById('das').value === 'true';
     dealerHitsSoft17 = document.getElementById('soft17').value === 'true';
     lateSurrenderAllowed = document.getElementById('surrender').value === 'true';
+    midRoundDealAllowed = document.getElementById('mid-round-deal').value === 'true';
 
     const newBankroll = parseInt(document.getElementById('starting-bankroll').value);
     if (newBankroll > 0) bankroll = newBankroll;
@@ -185,9 +193,48 @@ function updateTrueCount() {
     document.getElementById('true-count').innerText = getCurrentTrueCount();
 }
 
+function updateBetSuggestion() {
+    const tc = getCurrentTrueCount();
+    let units = 1;
+    if (tc >= 1) units = 2;
+    if (tc >= 2) units = 4;
+    if (tc >= 3) units = 6;
+    if (tc >= 4) units = 8;
+    if (tc >= 5) units = 12;
+
+    document.getElementById('bet-suggestion').innerText = `Suggested bet: $${baseUnit * units} (${units} units)`;
+}
+
 function updatePlayAccuracy() {
     const pct = totalDecisions === 0 ? 0 : Math.round((correctDecisions / totalDecisions) * 100);
     document.getElementById('play-accuracy').innerText = `Correct plays: ${correctDecisions}/${totalDecisions} (${pct}%)`;
+}
+
+function updateCountAccuracy() {
+    const pct = totalCountGuesses === 0 ? 0 : Math.round((correctCountGuesses / totalCountGuesses) * 100);
+    document.getElementById('count-accuracy').innerText = `${correctCountGuesses}/${totalCountGuesses} (${pct}%)`;
+}
+
+function updateButtonVisibility() {
+    const hand = playerHands[currentHandIndex] || [];
+    const isFirstMove = hand.length === 2;
+    const up = getDealerUpVal();
+    const tc = getCurrentTrueCount();
+
+    document.getElementById('hit-btn').style.display = 'inline-block';
+    document.getElementById('stand-btn').style.display = 'inline-block';
+    document.getElementById('double-btn').style.display = isFirstMove ? 'inline-block' : 'none';
+    document.getElementById('split-btn').style.display = isFirstMove && isPair(hand) && playerHands.length < 4 ? 'inline-block' : 'none';
+    document.getElementById('surrender-btn').style.display = isFirstMove && lateSurrenderAllowed ? 'inline-block' : 'none';
+
+    const insuranceActions = document.getElementById('insurance-actions');
+    if (gamePhase === 'insurance') {
+        insuranceActions.style.display = 'block';
+        document.getElementById('actions').style.display = 'none';
+    } else {
+        insuranceActions.style.display = 'none';
+        document.getElementById('actions').style.display = gamePhase === 'playing' ? 'block' : 'none';
+    }
 }
 
 function updateDisplay() {
@@ -195,17 +242,19 @@ function updateDisplay() {
     document.getElementById('decks-left').innerText = (deck.length / 52).toFixed(1);
     updateTrueCount();
     updatePlayAccuracy();
+    updateBetSuggestion();
 
-    let dealerStr = gamePhase === 'playing' ? cardText(dealerHand[0]) + ' ??' : dealerHand.map(cardText).join(' ');
+    let dealerStr = gamePhase === 'playing' || gamePhase === 'insurance' ? cardText(dealerHand[0]) + ' ??' : dealerHand.map(cardText).join(' ');
     document.getElementById('dealer-cards').innerText = dealerStr;
-    document.getElementById('dealer-total').innerText = gamePhase === 'playing' ? '?' : calculateTotal(dealerHand);
+    document.getElementById('dealer-total').innerText = gamePhase === 'playing' || gamePhase === 'insurance' ? '?' : calculateTotal(dealerHand);
 
     const hand = playerHands[currentHandIndex] || [];
     document.getElementById('player-cards').innerText = hand.map(cardText).join(' ');
     document.getElementById('player-total').innerText = calculateTotal(hand);
 
-    document.getElementById('actions').style.display = gamePhase === 'playing' ? 'block' : 'none';
-    document.getElementById('end-round').style.display = gamePhase === 'roundEnd' ? 'block' : 'none';
+    document.getElementById('deal-button').style.display = (gamePhase === 'betting' || midRoundDealAllowed) ? 'inline-block' : 'none';
+
+    updateButtonVisibility();
 }
 
 function startHand() {
@@ -215,6 +264,8 @@ function startHand() {
         return;
     }
     bankroll -= currentBet;
+    insuranceTaken = false;
+    insuranceBet = 0;
 
     playerHands = [[]];
     dealerHand = [];
@@ -227,8 +278,46 @@ function startHand() {
     dealCard(playerHands[0]);
     dealCard(dealerHand);
 
-    document.getElementById('feedback').innerText = "Make your move...";
+    if (dealerHand[0].startsWith('A')) {
+        gamePhase = 'insurance';
+        document.getElementById('feedback').innerText = "Insurance offered — decide";
+    } else {
+        document.getElementById('feedback').innerText = "Make your move...";
+    }
+
     updateDisplay();
+}
+
+function takeInsurance() {
+    insuranceBet = currentBet / 2;
+    if (bankroll < insuranceBet) {
+        alert("Not enough bankroll for insurance!");
+        return;
+    }
+    bankroll -= insuranceBet;
+    insuranceTaken = true;
+    document.getElementById('feedback').innerText = "Insurance taken";
+    proceedAfterInsurance();
+}
+
+function declineInsurance() {
+    document.getElementById('feedback').innerText = "Insurance declined";
+    proceedAfterInsurance();
+}
+
+function proceedAfterInsurance() {
+    gamePhase = 'playing';
+    if (calculateTotal(dealerHand) === 21) {
+        document.getElementById('result').innerText = "Dealer has Blackjack!";
+        if (insuranceTaken) {
+            bankroll += insuranceBet * 3;
+            document.getElementById('result').innerText += " Insurance wins!";
+        }
+        evaluateResults();
+    } else {
+        document.getElementById('feedback').innerText = "Make your move...";
+        updateDisplay();
+    }
 }
 
 function playerMove(action) {
@@ -284,7 +373,14 @@ function nextHand() {
         moveJustMade = false;
         document.getElementById('feedback').innerText = "Make your move...";
     } else {
-        dealerPlay();
+        const allBust = playerHands.every(h => calculateTotal(h) > 21);
+        if (allBust) {
+            document.getElementById('result').innerText = "All hands bust — you lose";
+            gamePhase = 'roundEnd';
+            updateDisplay();
+        } else {
+            dealerPlay();
+        }
     }
     updateDisplay();
 }
@@ -306,12 +402,19 @@ function evaluateResults() {
     let result = '';
     let net = 0;
 
+    const dealerBJ = calculateTotal(dealerHand) === 21 && dealerHand.length === 2;
+
     playerHands.forEach(hand => {
         const pTotal = calculateTotal(hand);
         const dTotal = calculateTotal(dealerHand);
 
         if (pTotal > 21) {
             result += 'Bust — Lose<br>';
+        } else if (dealerBJ && pTotal === 21 && hand.length === 2) {
+            net += currentBet;
+            result += 'Push (both Blackjack)<br>';
+        } else if (dealerBJ) {
+            result += 'Dealer Blackjack — Lose<br>';
         } else if (dTotal > 21 || pTotal > dTotal) {
             if (pTotal === 21 && hand.length === 2) {
                 net += currentBet * 1.5;
@@ -328,6 +431,11 @@ function evaluateResults() {
         }
     });
 
+    if (insuranceTaken && dealerBJ) {
+        net += insuranceBet * 3;
+        result += '<br>Insurance wins!';
+    }
+
     bankroll += net;
     document.getElementById('result').innerHTML = result + `<br>Net: ${net >= 0 ? '+' : ''}$${net}`;
     updateDisplay();
@@ -337,11 +445,17 @@ function checkCount() {
     const actualRC = seenCards.reduce((s, c) => s + getHiLoTag(c), 0);
     const guess = parseInt(document.getElementById('count-guess').value) || 0;
 
+    totalCountGuesses++;
     if (guess === actualRC) {
+        correctCountGuesses++;
         document.getElementById('count-feedback').innerHTML = `<strong style="color:lime">✓ CORRECT!</strong> Running count was ${actualRC}`;
     } else {
         document.getElementById('count-feedback').innerHTML = `<strong style="color:red">✗ WRONG</strong> — Running count was ${actualRC} (you guessed ${guess})`;
     }
+
+    previousRunningCount = actualRC;
+    document.getElementById('previous-rc').innerText = previousRunningCount;
+    updateCountAccuracy();
 
     setTimeout(() => {
         gamePhase = 'betting';
@@ -349,9 +463,10 @@ function checkCount() {
         document.getElementById('count-feedback').innerHTML = '';
         document.getElementById('result').innerHTML = '';
         updateDisplay();
-    }, 3000);
+    }, 4000);
 }
 
 // Initialize
 createDeck();
 updateDisplay();
+updateCountAccuracy();
