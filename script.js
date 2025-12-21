@@ -1,4 +1,4 @@
-// script.js - Blackjack Trainer with Settings Menu
+// script.js - Final Version with Working Settings, Auto-Continue, Play Accuracy
 
 let deck = [];
 let playerHands = [];
@@ -15,6 +15,10 @@ let numDecks = 6;
 let dasAllowed = true;
 let dealerHitsSoft17 = true;
 let lateSurrenderAllowed = true;
+
+// Play accuracy tracking
+let totalDecisions = 0;
+let correctDecisions = 0;
 
 const suits = ['♠', '♥', '♦', '♣'];
 const ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
@@ -41,7 +45,6 @@ function openSettings() {
     document.getElementById('settings-menu').style.display = 'block';
     document.getElementById('overlay').style.display = 'block';
 
-    // Load current values
     document.getElementById('num-decks').value = numDecks;
     document.getElementById('das').value = dasAllowed;
     document.getElementById('soft17').value = dealerHitsSoft17;
@@ -59,15 +62,10 @@ function applySettings() {
     dealerHitsSoft17 = document.getElementById('soft17').value === 'true';
     lateSurrenderAllowed = document.getElementById('surrender').value === 'true';
 
-    // Rebuild deck with new number of decks
-    createDeck();
-
+    createDeck(); // Rebuild shoe with new rules
     closeSettings();
     updateDisplay();
 }
-
-// Rest of the functions (createDeck, shuffle, dealCard, etc.) remain the same as previous version
-// ... (copy from previous script.js – everything below applySettings() is identical)
 
 function createDeck() {
     deck = [];
@@ -182,10 +180,16 @@ function updateTrueCount() {
     document.getElementById('true-count').innerText = getCurrentTrueCount();
 }
 
+function updatePlayAccuracy() {
+    const pct = totalDecisions === 0 ? 0 : Math.round((correctDecisions / totalDecisions) * 100);
+    document.getElementById('play-accuracy').innerText = `Correct plays: ${correctDecisions}/${totalDecisions} (${pct}%)`;
+}
+
 function updateDisplay() {
     document.getElementById('bankroll').innerText = bankroll.toLocaleString();
     document.getElementById('decks-left').innerText = (deck.length / 52).toFixed(1);
     updateTrueCount();
+    updatePlayAccuracy();
 
     let dealerStr = gamePhase === 'playing' ? cardText(dealerHand[0]) + ' ??' : dealerHand.map(cardText).join(' ');
     document.getElementById('dealer-cards').innerText = dealerStr;
@@ -198,8 +202,6 @@ function updateDisplay() {
     document.getElementById('actions').style.display = gamePhase === 'playing' ? 'block' : 'none';
     document.getElementById('end-round').style.display = gamePhase === 'roundEnd' ? 'block' : 'none';
 }
-
-// All other functions (startHand, playerMove, nextHand, dealerPlay, evaluateResults, checkCount) are exactly the same as in the previous version
 
 function startHand() {
     currentBet = parseInt(document.getElementById('bet-input').value) || baseUnit;
@@ -229,8 +231,10 @@ function playerMove(action) {
     const hand = playerHands[currentHandIndex];
 
     if (hand.length === 2 && !moveJustMade) {
+        totalDecisions++;
         const correct = getCorrectAction(hand);
         if (action === correct) {
+            correctDecisions++;
             document.getElementById('feedback').innerText = "✓ Correct play!";
         } else {
             document.getElementById('feedback').innerText = `✗ Wrong — correct was ${correct.toUpperCase()}`;
@@ -335,9 +339,14 @@ function checkCount() {
         document.getElementById('count-feedback').innerHTML = `<strong style="color:red">✗ WRONG</strong> — Running count was ${actualRC} (you guessed ${guess})`;
     }
 
-    gamePhase = 'betting';
-    document.getElementById('feedback').innerText = "Ready for next hand";
-    updateDisplay();
+    // Automatically continue to next hand after showing feedback
+    setTimeout(() => {
+        gamePhase = 'betting';
+        document.getElementById('feedback').innerText = "Ready — press Deal to start";
+        document.getElementById('count-feedback').innerHTML = '';
+        document.getElementById('result').innerHTML = '';
+        updateDisplay();
+    }, 3000); // 3 second delay so player can read feedback
 }
 
 // Init
