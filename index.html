@@ -40,6 +40,11 @@
             cursor: pointer;
         }
         button:hover { background: #d4af37; }
+        button:disabled, button.hidden {
+            background: #666;
+            cursor: not-allowed;
+            display: none;
+        }
         input[type="number"] {
             padding: 10px;
             font-size: 18px;
@@ -70,10 +75,6 @@
             font-size: 20px;
             color: lime;
             font-weight: bold;
-        }
-        #actions button {
-            font-size: 20px;
-            padding: 15px 30px;
         }
         #insurance-btn {
             background: #ff4444;
@@ -163,7 +164,7 @@
 
 <div id="game">
     <h1>Blackjack Hi-Lo Counting Trainer</h1>
-    <p>Full Illustrious 18 + Fab 4 + Insurance + Betting Ramp</p>
+    <p>Full Illustrious 18 + Fab 4 + Insurance + Ramp</p>
 
     <div class="section">
         <p>
@@ -190,12 +191,12 @@
     </div>
 
     <div id="actions" class="section" style="display:none;">
-        <button onclick="playerMove('hit')">Hit</button>
-        <button onclick="playerMove('stand')">Stand</button>
-        <button onclick="playerMove('double')">Double</button>
-        <button onclick="playerMove('split')">Split</button>
-        <button onclick="playerMove('surrender')">Surrender</button>
-        <button id="insurance-btn" style="display:none;" onclick="takeInsurance()">Insurance</button>
+        <button id="hit-btn" onclick="playerMove('hit')">Hit</button>
+        <button id="stand-btn" onclick="playerMove('stand')">Stand</button>
+        <button id="double-btn" onclick="playerMove('double')">Double</button>
+        <button id="split-btn" onclick="playerMove('split')">Split</button>
+        <button id="surrender-btn" onclick="playerMove('surrender')">Surrender</button>
+        <button id="insurance-btn" onclick="takeInsurance()">Insurance</button>
     </div>
 
     <div class="section">
