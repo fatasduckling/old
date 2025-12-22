@@ -256,13 +256,28 @@ function updateTrueCount() {
 function updateBetSuggestion() {
     const tc = getCurrentTrueCount();
     let units = 1;
-    if (tc >= 1) units = 2;
-    if (tc >= 2) units = 4;
-    if (tc >= 3) units = 6;
-    if (tc >= 4) units = 8;
-    if (tc >= 5) units = 12;
 
-    document.getElementById('bet-suggestion').innerText = `Suggested bet: $${baseUnit * units} (${units} units)`;
+    // PROFESSIONAL 1-12 RAMP (6-Deck Optimized)
+    // Advantage starts roughly at TC +1 (+0.5% for every point of TC)
+    if (tc < 1) {
+        units = 1;        // Minimum bet (protect bankroll/avoid heat)
+    } else if (tc >= 1 && tc < 2) {
+        units = 2;        // Neutral zone
+    } else if (tc >= 2 && tc < 3) {
+        units = 4;        // Advantage ~0.5%
+    } else if (tc >= 3 && tc < 4) {
+        units = 8;        // Advantage ~1.0%
+    } else if (tc >= 4) {
+        units = 12;       // Advantage ~1.5%+ (Max Bet)
+    }
+
+    const suggestedAmount = baseUnit * units;
+    
+    // Safety check: Don't suggest a bet larger than current bankroll
+    const finalSuggestion = Math.min(suggestedAmount, bankroll);
+
+    document.getElementById('bet-suggestion').innerHTML = 
+        `Suggested Bet: <strong>$${finalSuggestion}</strong> (${units} units)`;
 }
 
 function updatePlayAccuracy() {
