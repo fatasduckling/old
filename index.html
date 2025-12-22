@@ -13,40 +13,49 @@
 
 <div id="settings-menu">
     <h2>Game Settings</h2>
-    <p>
-        <label>Number of decks:</label><br>
-        <select id="num-decks">
-            <option value="1">1</option>
-            <option value="2">2</option>
-            <option value="6" selected>6</option>
-            <option value="8">8</option>
-        </select>
-    </p>
-    <p>
-        <label>Dealer on soft 17:</label><br>
-        <select id="soft17">
-            <option value="true" selected>Hits</option>
-            <option value="false">Stands</option>
-        </select>
-    </p>
-    <p>
-        <label>Late surrender:</label><br>
-        <select id="surrender">
-            <option value="true" selected>Enabled</option>
-            <option value="false">Disabled</option>
-        </select>
-    </p>
-    <p>
-        <label>Blackjack Payout:</label><br>
-        <select id="bj-payout">
-            <option value="1.5" selected>3:2 (Standard)</option>
-            <option value="1.2">6:5</option>
-        </select>
-    </p>
-    <p>
-        <label>Starting bankroll ($):</label><br>
-        <input type="number" id="starting-bankroll" value="5000">
-    </p>
+    <div class="settings-grid">
+        <div class="setting-item">
+            <label>Number of Decks:</label><br>
+            <select id="num-decks">
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="6" selected>6</option>
+                <option value="8">8</option>
+            </select>
+        </div>
+        <div class="setting-item">
+            <label>Dealer on Soft 17:</label><br>
+            <select id="soft17">
+                <option value="true" selected>Hits</option>
+                <option value="false">Stands</option>
+            </select>
+        </div>
+        <div class="setting-item">
+            <label>Late Surrender:</label><br>
+            <select id="surrender">
+                <option value="true" selected>Enabled</option>
+                <option value="false">Disabled</option>
+            </select>
+        </div>
+        <div class="setting-item">
+            <label>Blackjack Payout:</label><br>
+            <select id="bj-payout">
+                <option value="1.5" selected>3:2</option>
+                <option value="1.2">6:5</option>
+            </select>
+        </div>
+        <div class="setting-item">
+            <label>Starting Bankroll:</label><br>
+            <input type="number" id="starting-bankroll" value="5000">
+        </div>
+        <div class="setting-item">
+            <label>Double After Split:</label><br>
+            <select id="das">
+                <option value="true" selected>Yes</option>
+                <option value="false">No</option>
+            </select>
+        </div>
+    </div>
     <button id="apply-settings-btn">Apply & Close</button>
 </div>
 
@@ -78,7 +87,7 @@
     </div>
 
     <div id="insurance-actions" class="section" style="display:none;">
-        <p style="color:orange; font-size:1.2em;">Insurance Offered?</p>
+        <p style="color:orange; font-size:1.2em;">Dealer shows Ace. Take Insurance?</p>
         <button id="insurance-btn">Take Insurance</button>
         <button id="no-insurance-btn">Decline</button>
     </div>
