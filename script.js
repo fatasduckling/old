@@ -7,34 +7,21 @@ let numDecks = 6;
 const suits = ['♠', '♥', '♦', '♣'];
 const ranks = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
 
-// Professional Deviations
-const illustrious18 = { 16: {10: 0}, 15: {10: 4}, 12: {3: 2, 2: 3, 4: 0, 5: -2, 6: -1}, 'insurance': 3 };
-
+// Image mapping for your specific filenames
 function getCardImageHTML(card) {
     const suitMap = { '♠': 'spades', '♥': 'hearts', '♦': 'diamonds', '♣': 'clubs' };
     const rankMap = { 'A': 'ace', 'J': 'jack', 'Q': 'queen', 'K': 'king' };
-    
-    let rank = card.slice(0, -1);
-    const suitIcon = card.slice(-1);
-    
-    // Map 'A' to 'ace', '10' to '10', etc.
-    const rankName = rankMap[rank] || rank;
-    const suitName = suitMap[suitIcon];
-    
-    // This MUST match your folder name and filename format exactly
-    const fileName = `${rankName}_of_${suitName}.svg`.toLowerCase();
-    const filePath = `cards/${fileName}`;
-
-    // The 'onerror' part helps us debug if the image is missing
-    return `<img src="${filePath}" 
-                 class="card-img" 
-                 alt="${card}" 
-                 onerror="this.onerror=null; this.parentElement.innerHTML+='<br>${fileName} missing';">`;
+    const r = card.slice(0, -1);
+    const s = card.slice(-1);
+    const fileName = `${rankMap[r] || r}_of_${suitMap[s]}.svg`.toLowerCase();
+    return `<img src="cards/${fileName}" class="card-img" alt="${card}">`;
 }
 
 function createDeck() {
     deck = [];
-    for (let d = 0; d < numDecks; d++) suits.forEach(s => ranks.forEach(r => deck.push(r + s)));
+    for (let d = 0; d < numDecks; d++) {
+        suits.forEach(s => ranks.forEach(r => deck.push(r + s)));
+    }
     deck.sort(() => Math.random() - 0.5);
 }
 
@@ -78,7 +65,7 @@ function updateBetSuggestion() {
     if (tc >= 1 && tc < 2) units = 2;
     else if (tc >= 2 && tc < 3) units = 4;
     else if (tc >= 3 && tc < 4) units = 8;
-    else if (tc >= 4) units = 12; // 1-12 Unit Spread
+    else if (tc >= 4) units = 12; // 1-12 Profitable Spread
     document.getElementById('bet-suggestion').innerHTML = `Suggested bet: $${baseUnit * units} (${units} units)`;
 }
 
@@ -88,7 +75,9 @@ function updateDisplay() {
     document.getElementById('decks-left').innerText = (deck.length / 52).toFixed(1);
     updateBetSuggestion();
 
-    const hideDealer = (gamePhase === 'playing' || gamePhase === 'insurance');
+    const hideDealer = (gamePhase === 'playing' || gamePhase === 'insurance' || gamePhase === 'dealer');
+    
+    // Using innerHTML to render the <img> tags
     document.getElementById('dealer-cards').innerHTML = hideDealer 
         ? `<img src="cards/back.svg" class="card-img">` + getCardImageHTML(dealerHand[0])
         : dealerHand.map(getCardImageHTML).join('');
@@ -114,11 +103,6 @@ function startHand() {
 
 function playerMove(action) {
     const hand = playerHands[currentHandIndex];
-    if (hand.length === 2 && !moveJustMade) {
-        totalDecisions++;
-        // Trainer logic checks basic vs deviation here...
-        moveJustMade = true;
-    }
     if (action === 'hit') { dealCard(hand); if (calculateTotal(hand) > 21) nextHand(); }
     else if (action === 'stand') nextHand();
     updateDisplay();
@@ -130,7 +114,7 @@ function nextHand() {
 }
 
 function dealerPlay() {
-    gamePhase = 'dealer';
+    gamePhase = 'dealer-turn';
     updateDisplay();
     const step = () => {
         if (calculateTotal(dealerHand) < 17) { dealCard(dealerHand); updateDisplay(); setTimeout(step, 800); }
@@ -140,7 +124,7 @@ function dealerPlay() {
 }
 
 function evaluateResults() {
-    // Logic for win/loss...
+    // Basic win/loss logic
     if (guessCountEnabled) {
         document.getElementById('end-round').style.display = 'block';
         document.getElementById('check-count-btn').style.display = 'inline-block';
@@ -152,9 +136,9 @@ function checkCount() {
     document.getElementById('check-count-btn').style.display = 'none';
     const actual = seenCards.reduce((s, c) => s + getHiLoTag(c), 0);
     const guess = parseInt(document.getElementById('count-guess').value) || 0;
-    totalCountGuesses++;
-    if (guess === actual) { correctCountGuesses++; document.getElementById('count-feedback').innerText = "✓ Correct!"; }
-    else { document.getElementById('count-feedback').innerText = `✗ Wrong: was ${actual}`; }
+    if (guess === actual) document.getElementById('count-feedback').innerText = "✓ Correct!";
+    else document.getElementById('count-feedback').innerText = `✗ Wrong: was ${actual}`;
+    
     setTimeout(() => { 
         document.getElementById('end-round').style.display = 'none'; 
         gamePhase = 'betting'; 
@@ -162,7 +146,6 @@ function checkCount() {
     }, 3000);
 }
 
-// Initialization and Listeners...
 createDeck();
 updateDisplay();
 document.getElementById('deal-button').onclick = startHand;
