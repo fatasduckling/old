@@ -40,6 +40,22 @@ const illustrious18 = {
     8: {6: 2, 5: 4},
     '10-10': {5: 5, 6: 4}
 };
+function getCardImageHTML(card) {
+    const suitMap = { '♠': 'spades', '♥': 'hearts', '♦': 'diamonds', '♣': 'clubs' };
+    const rankMap = { 'A': 'ace', 'J': 'jack', 'Q': 'queen', 'K': 'king' };
+    
+    let rank = card.slice(0, -1);
+    const suitIcon = card.slice(-1);
+    
+    // Convert rank to full name if necessary (e.g., "A" to "ace")
+    const rankName = rankMap[rank] || rank;
+    const suitName = suitMap[suitIcon];
+    
+    const fileName = `${rankName}_of_${suitName}.svg`;
+
+    // Assuming your images are in a folder named 'cards'
+    return `<img src="cards/${fileName}" class="card-img" alt="${card}">`;
+}
 
 const fab4 = {
     17: {'A': 2},
