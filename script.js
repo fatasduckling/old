@@ -13,10 +13,23 @@ const illustrious18 = { 16: {10: 0}, 15: {10: 4}, 12: {3: 2, 2: 3, 4: 0, 5: -2, 
 function getCardImageHTML(card) {
     const suitMap = { '♠': 'spades', '♥': 'hearts', '♦': 'diamonds', '♣': 'clubs' };
     const rankMap = { 'A': 'ace', 'J': 'jack', 'Q': 'queen', 'K': 'king' };
-    const r = card.slice(0, -1);
-    const s = card.slice(-1);
-    const fileName = `${rankMap[r] || r}_of_${suitMap[s]}.svg`;
-    return `<img src="cards/${fileName}" class="card-img">`;
+    
+    let rank = card.slice(0, -1);
+    const suitIcon = card.slice(-1);
+    
+    // Map 'A' to 'ace', '10' to '10', etc.
+    const rankName = rankMap[rank] || rank;
+    const suitName = suitMap[suitIcon];
+    
+    // This MUST match your folder name and filename format exactly
+    const fileName = `${rankName}_of_${suitName}.svg`.toLowerCase();
+    const filePath = `cards/${fileName}`;
+
+    // The 'onerror' part helps us debug if the image is missing
+    return `<img src="${filePath}" 
+                 class="card-img" 
+                 alt="${card}" 
+                 onerror="this.onerror=null; this.parentElement.innerHTML+='<br>${fileName} missing';">`;
 }
 
 function createDeck() {
