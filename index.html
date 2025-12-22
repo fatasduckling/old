@@ -4,118 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Blackjack Hi-Lo Counting Trainer</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            background-color: #0b6623;
-            color: white;
-            margin: 0;
-            padding: 20px;
-            position: relative;
-        }
-        h1 { color: gold; margin-bottom: 10px; }
-        #game {
-            max-width: 900px;
-            margin: 0 auto;
-            background: rgba(0, 0, 0, 0.4);
-            padding: 20px;
-            border-radius: 15px;
-        }
-        .section { margin: 30px 0; }
-        .cards {
-            font-size: 48px;
-            min-height: 80px;
-            margin: 20px 0;
-            letter-spacing: 10px;
-        }
-        button {
-            background: #c3992a;
-            color: white;
-            border: none;
-            padding: 12px 24px;
-            margin: 8px;
-            font-size: 18px;
-            border-radius: 8px;
-            cursor: pointer;
-        }
-        button:hover { background: #d4af37; }
-        input[type="number"] {
-            padding: 10px;
-            font-size: 18px;
-            width: 120px;
-        }
-        #feedback {
-            font-weight: bold;
-            font-size: 24px;
-            color: yellow;
-            min-height: 40px;
-        }
-        #true-count {
-            font-size: 28px;
-            font-weight: bold;
-            color: cyan;
-        }
-        #bet-suggestion {
-            font-size: 20px;
-            color: lime;
-            font-weight: bold;
-        }
-        #count-feedback {
-            font-size: 22px;
-            font-weight: bold;
-            min-height: 60px;
-        }
-        #play-accuracy, #count-accuracy {
-            font-size: 20px;
-            color: lime;
-            font-weight: bold;
-        }
-        #insurance-btn {
-            background: #ff4444;
-        }
-        #insurance-btn:hover {
-            background: #ff6666;
-        }
-        #no-insurance-btn {
-            background: #666;
-        }
-        #no-insurance-btn:hover {
-            background: #888;
-        }
-        #settings-btn {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background: #8b6914;
-            padding: 10px 20px;
-        }
-        #settings-menu {
-            display: none;
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0, 0, 0, 0.9);
-            padding: 30px;
-            border-radius: 15px;
-            z-index: 100;
-            border: 3px solid gold;
-        }
-        #settings-menu select, #settings-menu input {
-            padding: 10px;
-            font-size: 18px;
-            margin: 10px;
-            width: 200px;
-        }
-        #overlay {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.7);
-            z-index: 99;
-        }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
@@ -126,82 +15,66 @@
 <div id="settings-menu">
     <h2>Game Settings</h2>
     <p>
+        <label>Card Counting Trainer:</label><br>
+        <select id="counting-on">
+            <option value="true" selected>On (Include Deviations)</option>
+            <option value="false">Off (Basic Strategy Only)</option>
+        </select>
+    </p>
+    <p>
+        <label>Guess Running Count:</label><br>
+        <select id="guess-count-on">
+            <option value="true" selected>Every Round</option>
+            <option value="false">Off</option>
+        </select>
+    </p>
+    <p>
         <label>Number of decks:</label><br>
         <select id="num-decks">
             <option value="1">1</option>
             <option value="2">2</option>
-            <option value="4">4</option>
             <option value="6" selected>6</option>
             <option value="8">8</option>
         </select>
     </p>
     <p>
-        <label>Double After Split:</label><br>
-        <select id="das">
-            <option value="true">Yes</option>
-            <option value="false">No</option>
-        </select>
-    </p>
-    <p>
-        <label>Dealer on soft 17:</label><br>
-        <select id="soft17">
-            <option value="true">Hits</option>
-            <option value="false">Stands</option>
-        </select>
-    </p>
-    <p>
-        <label>Late surrender:</label><br>
-        <select id="surrender">
-            <option value="true">Yes</option>
-            <option value="false">No</option>
-        </select>
-    </p>
-    <p>
         <label>Starting bankroll ($):</label><br>
-        <input type="number" id="starting-bankroll" value="5000" min="1000" step="500">
-    </p>
-    <p>
-        <label>Allow Deal button during play (for testing):</label><br>
-        <select id="mid-round-deal">
-            <option value="true">Yes</option>
-            <option value="false" selected>No</option>
-        </select>
+        <input type="number" id="starting-bankroll" value="5000">
     </p>
     <button id="apply-settings-btn">Apply & Close</button>
 </div>
 
 <div id="game">
     <h1>Blackjack Hi-Lo Counting Trainer</h1>
-    <p>Full Illustrious 18 + Fab 4 + Insurance + Ramp</p>
-
+    
     <div class="section">
         <p>
             Bankroll: $<span id="bankroll">5000</span> &nbsp;&nbsp;|&nbsp;&nbsp;
-            Decks remaining: <span id="decks-left">6.0</span> &nbsp;&nbsp;|&nbsp;&nbsp;
+            Decks: <span id="decks-left">6.0</span> &nbsp;&nbsp;|&nbsp;&nbsp;
             True Count: <span id="true-count">0.0</span>
         </p>
         <p id="play-accuracy">Correct plays: 0/0 (0%)</p>
         <p id="bet-suggestion">Suggested bet: $25 (1 unit)</p>
         <p>
-            Place your bet: $<input type="number" id="bet-input" min="25" step="25" value="25">
-            <button id="deal-button">Deal New Hand</button>
+            Bet: $<input type="number" id="bet-input" value="25">
+            <button id="deal-button">Deal Hand</button>
         </p>
     </div>
 
     <div class="section">
         <h2>Dealer Hand: <span id="dealer-total">?</span></h2>
-        <div id="dealer-cards" class="cards">?</div>
+        <div id="dealer-cards" class="cards"></div>
     </div>
 
     <div class="section">
         <h2>Your Hand: <span id="player-total">?</span></h2>
-        <div id="player-cards" class="cards">?</div>
+        <div id="player-cards" class="cards"></div>
     </div>
 
     <div id="insurance-actions" class="section" style="display:none;">
-        <p style="font-size:24px; color:orange;">Dealer shows Ace — Insurance offered?</p>
-        <button id="insurance-btn">Yes — Take Insurance</button>
-        <button id="no-insurance-btn">No — Decline</button>
+        <p style="font-size:24px; color:orange;">Insurance offered?</p>
+        <button id="insurance-btn">Take Insurance</button>
+        <button id="no-insurance-btn">Decline</button>
     </div>
 
     <div id="actions" class="section" style="display:none;">
@@ -213,16 +86,14 @@
     </div>
 
     <div class="section">
-        <p id="feedback">Ready — press Deal to start</p>
+        <p id="feedback">Ready — press Deal</p>
     </div>
 
-    <!-- Fixed: added id="end-round" -->
     <div id="end-round" style="display:none;" class="section">
-        <h2>End of Round - Running Count Check</h2>
-        <p>Previous running count was: <strong id="previous-rc">0</strong></p>
-        <p>Count accuracy: <span id="count-accuracy">0/0 (0%)</span></p>
-        <p>Your running count guess: <input type="number" id="count-guess" placeholder="e.g. +5"></p>
-        <button id="check-count-btn">Submit Guess & Continue</button>
+        <h2>Guess the Running Count</h2>
+        <p>Accuracy: <span id="count-accuracy">0/0 (0%)</span></p>
+        <input type="number" id="count-guess" placeholder="RC?">
+        <button id="check-count-btn">Submit Guess</button>
         <p id="count-feedback"></p>
     </div>
 
