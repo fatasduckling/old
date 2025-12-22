@@ -1,6 +1,67 @@
-body { font-family: Arial, sans-serif; text-align: center; background: green; color: white; }
-#dealer-cards, #player-cards { margin: 20px; }
-#dealer-cards img, #player-cards img { width: 100px; margin: 5px; border-radius: 10px; box-shadow: 0 4px 8px black; }
-button { padding: 10px 20px; margin: 10px; font-size: 18px; }
-input { padding: 10px; font-size: 18px; }
-h1, h2 { color: gold; }
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    background-color: #0b6623;
+    color: white;
+    margin: 0;
+    padding: 20px;
+}
+
+h1 { color: gold; }
+
+#game {
+    max-width: 900px;
+    margin: 0 auto;
+    background: rgba(0, 0, 0, 0.4);
+    padding: 20px;
+    border-radius: 15px;
+}
+
+.section { margin: 20px 0; }
+
+.cards {
+    display: flex;
+    justify-content: center;
+    min-height: 150px;
+    gap: 10px;
+}
+
+.card-img {
+    height: 140px;
+    width: auto;
+    border-radius: 8px;
+    box-shadow: 3px 3px 10px rgba(0,0,0,0.5);
+}
+
+button {
+    background: #c3992a;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    margin: 5px;
+    font-size: 16px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+button:hover { background: #d4af37; }
+
+#settings-menu {
+    display: none;
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.95);
+    padding: 30px;
+    border-radius: 15px;
+    z-index: 100;
+    border: 2px solid gold;
+}
+
+#overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.7);
+    z-index: 99;
+}
