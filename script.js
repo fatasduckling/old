@@ -530,13 +530,19 @@ function evaluateResults() {
     bankroll += net;
     document.getElementById('result').innerHTML = result + `<br>Net: ${net >= 0 ? '+' : ''}$${net}`;
 
+    // Show the guess section
     document.getElementById('end-round').style.display = 'block';
+    // Ensure the submit button is visible for the new guess
+    document.getElementById('check-count-btn').style.display = 'inline-block'; 
     document.getElementById('feedback').innerText = "Round over — guess the running count!";
 
     updateDisplay();
 }
 
 function checkCount() {
+    // Hide the button immediately so it can't be pressed twice
+    document.getElementById('check-count-btn').style.display = 'none';
+
     const actualRC = seenCards.reduce((s, c) => s + getHiLoTag(c), 0);
     const guess = parseInt(document.getElementById('count-guess').value) || 0;
 
@@ -553,6 +559,7 @@ function checkCount() {
     updateCountAccuracy();
 
     setTimeout(() => {
+        // Full clean reset for the UI, but we NO LONGER reset seenCards here
         document.getElementById('end-round').style.display = 'none';
         document.getElementById('count-feedback').innerHTML = '';
         document.getElementById('result').innerHTML = '';
@@ -563,12 +570,13 @@ function checkCount() {
         document.getElementById('feedback').innerText = "Ready — press Deal to start";
         document.getElementById('count-guess').value = '';
 
+        // Reset hands for the next round
         playerHands = [];
         dealerHand = [];
-        seenCards = [];
+        // seenCards = [];  <-- THIS LINE REMOVED to keep count between rounds
 
         gamePhase = 'betting';
-        updateDisplay();
+        updateDisplay(); 
         updateBetSuggestion();
     }, 4000);
 }
