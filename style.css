@@ -66,6 +66,3 @@ button:hover { background: #d4af37; }
     background: rgba(0,0,0,0.7);
     z-index: 99;
 }
-
-#insurance-btn { background: #ff4444; }
-#no-insurance-btn { background: #666; }
