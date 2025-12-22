@@ -4,9 +4,9 @@ let gamePhase = 'betting', moveJustMade = false;
 let totalDecisions = 0, correctDecisions = 0, totalCountGuesses = 0, correctCountGuesses = 0;
 
 // Settings Variables
-let numDecks = 6, dealerHitsSoft17 = true, surrenderEnabled = true, bjPayout = 1.5;
+let numDecks = 6, dealerHitsSoft17 = true, surrenderEnabled = true, bjPayout = 1.5, dasAllowed = true;
 
-// Professional Deviations
+// Strategy Data
 const illustrious18 = {
     'insurance': 3,
     16: {10: 0}, 15: {10: 4}, 13: {2: -1},
@@ -33,7 +33,7 @@ function createDeck() {
 }
 
 function dealCard(toHand) {
-    if (deck.length < 15) { createDeck(); seenCards = []; }
+    if (deck.length < 20) { createDeck(); seenCards = []; }
     const card = deck.pop();
     toHand.push(card);
     seenCards.push(card);
@@ -63,32 +63,25 @@ function getCurrentTrueCount() {
     return Math.round(rc / decksLeft * 10) / 10;
 }
 
-// FULL PLAY CHECKER
+// Play Checker
 function getCorrectAction(hand) {
     const total = calculateTotal(hand);
     const tc = getCurrentTrueCount();
     const up = dealerHand[0].slice(0, -1);
     const upStr = (up === 'J' || up === 'Q' || up === 'K') ? '10' : up;
 
-    // Check Surrender (Fab 4)
     if (surrenderEnabled && hand.length === 2) {
         if (fab4[total] && fab4[total][upStr] !== undefined && tc >= fab4[total][upStr]) return 'surrender';
     }
 
-    // Check Illustrious 18 Deviations
-    if (illustrious18[total] && illustrious18[total][upStr] !== undefined) {
-        if (tc >= illustrious18[total][upStr]) {
-            if (total >= 12 && total <= 16) return 'stand';
-            if (total >= 8 && total <= 11) return 'double';
-        }
+    if (illustrious18[total] && illustrious18[total][upStr] !== undefined && tc >= illustrious18[total][upStr]) {
+        if (total >= 12 && total <= 16) return 'stand';
+        if (total >= 8 && total <= 11) return 'double';
     }
 
-    // Basic Strategy Fallback
     if (total >= 17) return 'stand';
     if (total >= 13 && total <= 16 && (upStr <= 6 && upStr >= 2)) return 'stand';
     if (total === 12 && (upStr >= 4 && upStr <= 6)) return 'stand';
-    if (hand.length === 2 && total === 11) return 'double';
-    
     return 'hit';
 }
 
@@ -117,21 +110,13 @@ function playerMove(action) {
     if (!moveJustMade) {
         totalDecisions++;
         const correct = getCorrectAction(hand);
-        if (action === correct) {
-            correctDecisions++;
-            document.getElementById('feedback').innerText = "✓ Correct Play!";
-            document.getElementById('feedback').style.color = "lime";
-        } else {
-            document.getElementById('feedback').innerText = `✗ Wrong - Correct was ${correct.toUpperCase()}`;
-            document.getElementById('feedback').style.color = "red";
-        }
+        if (action === correct) { correctDecisions++; document.getElementById('feedback').innerText = "✓ Correct Play!"; }
+        else { document.getElementById('feedback').innerText = `✗ Wrong - Correct was ${correct.toUpperCase()}`; }
         moveJustMade = true;
     }
-
     if (action === 'hit') { dealCard(hand); if (calculateTotal(hand) > 21) nextHand(); }
     else if (action === 'stand') nextHand();
     else if (action === 'surrender') { bankroll += currentBet / 2; nextHand(); }
-    
     updateDisplay();
 }
 
@@ -189,6 +174,7 @@ document.getElementById('apply-settings-btn').onclick = () => {
     dealerHitsSoft17 = document.getElementById('soft17').value === 'true';
     surrenderEnabled = document.getElementById('surrender').value === 'true';
     bjPayout = parseFloat(document.getElementById('bj-payout').value);
+    dasAllowed = document.getElementById('das').value === 'true';
     document.getElementById('settings-menu').style.display='none'; 
     document.getElementById('overlay').style.display='none'; 
     updateDisplay(); 
@@ -201,7 +187,6 @@ document.getElementById('check-count-btn').onclick = () => {
         return s;
     }, 0);
     const guess = parseInt(document.getElementById('count-guess').value) || 0;
-    totalCountGuesses++;
     if (guess === actual) { correctCountGuesses++; document.getElementById('count-feedback').innerText = "✓ Correct Count!"; }
     else document.getElementById('count-feedback').innerText = `✗ Wrong: was ${actual}`;
     setTimeout(() => { document.getElementById('end-round').style.display = 'none'; gamePhase = 'betting'; updateDisplay(); }, 2000);
